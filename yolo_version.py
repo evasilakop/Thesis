@@ -6,9 +6,13 @@ import numpy as np # type: ignore
 from ultralytics import YOLO # type: ignore
 from scipy.sparse import csr_array # type: ignore
 from scipy.sparse.csgraph import floyd_warshall # type: ignore
+from scipy.sparse import csr_array # type: ignore
+from scipy.sparse.csgraph import floyd_warshall # type: ignore
 
 
 def detection(fps, cap_frequency, confidence, model):
+
+
 
 
     frame_count = 0
