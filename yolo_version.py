@@ -13,8 +13,6 @@ from scipy.sparse.csgraph import floyd_warshall # type: ignore
 def detection(fps, cap_frequency, confidence, model):
 
 
-
-
     frame_count = 0
     frame_number = 0
     while cap.isOpened():
