@@ -6,8 +6,6 @@ import numpy as np # type: ignore
 from ultralytics import YOLO # type: ignore
 from scipy.sparse import csr_array # type: ignore
 from scipy.sparse.csgraph import floyd_warshall # type: ignore
-from scipy.sparse import csr_array # type: ignore
-from scipy.sparse.csgraph import floyd_warshall # type: ignore
 
 
 def detection(fps, cap_frequency, confidence, model):
@@ -115,7 +113,5 @@ if __name__ == '__main__':
     # Returns the row where the maximum traffic is detected, odd or
     # even is what describes each direction.
 
-
-    
     cap.release()
     cv2.destroyAllWindows()
