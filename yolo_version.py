@@ -1,11 +1,8 @@
 import cv2 # type: ignore
 import argparse
 import time
-import numpy as np # type: ignore
 
 from ultralytics import YOLO # type: ignore
-from scipy.sparse import csr_array # type: ignore
-from scipy.sparse.csgraph import floyd_warshall # type: ignore
 
 
 def detection(fps, cap_frequency, confidence, model):
@@ -72,7 +69,7 @@ def detection(fps, cap_frequency, confidence, model):
                 print(f"Processed Frame {frame_number}\n")
                 print(f"Weight: {total_weight}")
                 cv2.imwrite("images/Frame%1d.jpg" % (frame_number), frame)
-    return total_weight
+                yield total_weight
 
 
 if __name__ == '__main__':
@@ -98,20 +95,5 @@ if __name__ == '__main__':
                         args["frequency"],
                         args["confidence"],
                         model)
-
-    arr = np.array([
-        [   0,       0,    "w0+w2",    0],
-        [   0,       0,       0,    "w1+w3"],
-        ["w0+w2",    0,       0,       0],
-        [   0,    "w1+w3",    0,       0]
-    ])
-
-    graph = csr_array(arr)
-
-    dist_matrix = floyd_warshall(csgraph=graph, directed=False)
-    green_direction = dist_matrix.argmax(axis=0)
-    # Returns the row where the maximum traffic is detected, odd or
-    # even is what describes each direction.
-
     cap.release()
     cv2.destroyAllWindows()
