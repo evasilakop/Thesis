@@ -91,9 +91,11 @@ if __name__ == '__main__':
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     # Allow time for the video to load/camera to start.
     time.sleep(1)
-    weight = detection(fps,
+    for weight in detection(fps,
                         args["frequency"],
                         args["confidence"],
-                        model)
+                        model):
+        #publish weight
+        print(f"The traffic detected by this light is {weight}")
     cap.release()
     cv2.destroyAllWindows()
