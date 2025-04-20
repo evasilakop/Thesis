@@ -51,8 +51,6 @@ def detection(frame_interval, confidence, model):
 
             frame_number += 1
             print(f"Processed Frame {frame_number}")
-            print(f"Weight: {total_weight}")
-
             output_path = os.path.join(output_dir, 
                                        f"Frame{frame_number}.jpg")
             cv2.imwrite(output_path, frame)
