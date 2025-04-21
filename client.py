@@ -1,14 +1,14 @@
 import time
-import sys
+import json
+import yolo_version
 
 from paho.mqtt import client as mqtt_client
 
 
-#broker = 
-#port = 1883 #default for mqtt
+broker = localhost
+port = 1883 #default for mqtt
 topic = "weights"
-# Generate a Client ID with the publish prefix.
-#client_id = 
+client_id = "Light_0"
 
 def connect_mqtt():
     #callback function, gets called after the client gets a message from the broker
@@ -28,7 +28,7 @@ def connect_mqtt():
 def publish(client):
     while True:
         time.sleep(1)
-        # msg = whatever weight we get back
+        msg =json.dumps(client.client_id, yolo_version.weight)
         result = client.publish(topic, msg)
         # result: [0, 1]
         status = result[0]

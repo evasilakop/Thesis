@@ -1,9 +1,10 @@
+import json
 from paho.mqtt import client as mqtt_client
 
-#broker = 
-#port = 
+broker = localhost
+port = 1883
 topic = "weights"
-#client_id = 
+client_id = "Light_0"
 
 
 def connect_mqtt() -> mqtt_client:
@@ -23,6 +24,9 @@ def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
         print(
             f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+        x = json.loads(msg)
+        direction = x[0]
+        weight = x[1]
 
     client.subscribe(topic)
     client.on_message = on_message
