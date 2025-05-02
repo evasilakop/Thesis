@@ -7,8 +7,7 @@ BAUD_RATE = 9600
 
 def is_port_available(port_name):
     try:
-        with serial.Serial(port=port_name, baudrate=BAUD_RATE,
-                           timeout=1) as ser:
+        with serial.Serial(port=port_name, baudrate=BAUD_RATE, timeout=1) as ser:
             ser.write(b"ping\n")
         return True
     except serial.SerialException:
@@ -36,7 +35,7 @@ def find_working_ports():
 
     return working_ports
 
-def run_node(port, node_id, video_path, interval=3):
+def run_node(port, node_id, video_path, confidence, interval):
     import serial
     import threading
     import time
@@ -54,7 +53,7 @@ def run_node(port, node_id, video_path, interval=3):
     print(f"[{node_id}] Starting on {port}")
     with serial.Serial(port, BAUD_RATE, timeout=1) as ser:
         threading.Thread(target=listener, args=(ser,), daemon=True).start()
-        detector = WeightDetector(video_path)
+        detector = WeightDetector(video_path, confidence, interval)
 
         while True:
             try:
@@ -67,22 +66,7 @@ def run_node(port, node_id, video_path, interval=3):
                 print(f"[{node_id}] Video ended")
                 break
 
-    def sender(ser):
-        while True:
-            try:
-                for weight in detector:
-                    message = f"{node_id} weight={weight}"
-                    ser.write((message + '\n').encode())
-                    print(f"[{node_id}] Sent: {message}")
-            except serial.SerialException:
-                break
-
-    print(f"[{node_id}] Starting on {port}")
-    with serial.Serial(port, BAUD_RATE, timeout=1) as ser:
-        threading.Thread(target=listener, args=(ser,), daemon=True).start()
-        sender(ser)  # blocks
-
-def launch_nodes(num_nodes):
+def launch_nodes(num_nodes, video_path, confidence, interval):
     ports = find_working_ports()
     if len(ports) < num_nodes:
         print(f"Not enough available ports. Needed: {num_nodes}, Found: {len(ports)}")
@@ -91,7 +75,7 @@ def launch_nodes(num_nodes):
     processes = []
     for i in range(num_nodes):
         node_id = f"Node{i}"
-        p = Process(target=run_node, args=(ports[i], node_id))
+        p = Process(target=run_node, args=(ports[i], node_id, video_path, confidence, interval))
         p.start()
         processes.append(p)
 
@@ -106,11 +90,21 @@ def launch_nodes(num_nodes):
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description=
-            "Launch simulated XBee nodes on available COM ports.")
+    parser = argparse.ArgumentParser(
+        description="Launch simulated XBee nodes on available COM ports.")
     parser.add_argument("--nodes", type=int, default=2, 
-                        help="Number of nodes to launch")
+                help="Number of simulated nodes")
+    parser.add_argument("-v", "--video", 
+                help="Path to input video", default="video.mp4")
+    parser.add_argument("-c", "--confidence", type=float, 
+                        default=0.5, 
+                        help="Object detection confidence threshold")
+    parser.add_argument("-f", "--frequency", type=float, default=3,
+                        help="Seconds between traffic measurements")
     args = parser.parse_args()
 
     print(f"Launching {args.nodes} simulated nodes...")
-    launch_nodes(args.nodes)
+    launch_nodes(args.nodes, 
+                 args.video, 
+                 args.confidence, 
+                 args.frequency)
