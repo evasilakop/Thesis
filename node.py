@@ -1,86 +1,92 @@
-import cv2 
-import argparse
-import time
+# node.py
+import cv2
 import os
+import time
 from ultralytics import YOLO
 
-def detection(frame_interval, confidence, model):
-    frame_count = 0
-    frame_number = 0
-    
-    # Mapping for object labels to their weight values
-    weight_mapping = {
-        "car": 2,
-        "bus": 10,
-        "motorcycle": 1,
-        "truck": 10
-    }
+class WeightDetector:
+    def __init__(self, video_path, confidence=0.5, frequency=3):
+        self.video_path = video_path
+        self.confidence = confidence
+        self.frequency = frequency
+        self.weight_mapping = {
+            "car": 2,
+            "bus": 10,
+            "motorcycle": 1,
+            "truck": 10
+        }
+        self.output_dir = "images"
+        os.makedirs(self.output_dir, exist_ok=True)
 
-    # Ensure the output directory exists
-    output_dir = "images"
-    os.makedirs(output_dir, exist_ok=True)
+        self.model = YOLO("yolov8n.pt")
+        self.cap = cv2.VideoCapture(video_path)
+        fps = int(self.cap.get(cv2.CAP_PROP_FPS))
+        self.frame_interval = int(fps * frequency)
+        self.frame_count = 0
+        self.frame_number = 0
+        time.sleep(1)
 
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            print("Video ended or error reading frame")
-            break
+    def __iter__(self):
+        return self
 
-        frame_count += 1
+    def __next__(self):
+        while self.cap.isOpened():
+            ret, frame = self.cap.read()
+            if not ret:
+                self.cap.release()
+                raise StopIteration
 
-        # Only process at specified interval
-        if frame_count % frame_interval == 0:
+            self.frame_count += 1
+
+            if self.frame_count % self.frame_interval != 0:
+                continue
+
             total_weight = 0
-            results = model(frame)
+            results = self.model(frame)
+
             for result in results:
                 for box in result.boxes:
                     conf = box.conf[0].item()
                     cls = int(box.cls[0].item())
-                    label = model.names[cls]
+                    label = self.model.names[cls]
 
-                    if conf > confidence and label in weight_mapping:
-                        total_weight += weight_mapping[label]
-                        # Draw bounding box and label
+                    if conf > self.confidence and label in self.weight_mapping:
+                        total_weight += self.weight_mapping[label]
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
                         cv2.rectangle(frame, (x1, y1), (x2, y2), 
-                                     (0, 255, 0), 2)
+                                    (0, 255, 0), 2)
                         cv2.putText(frame, f"{label}: {conf:.2f}",
-                                    (x1, y1-10), 
-                                    cv2.FONT_HERSHEY_SIMPLEX,
-                                    0.5, (0, 255, 0), 2)
+                                    (x1, y1-10),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                                    (0, 255, 0), 2)
 
-            frame_number += 1
-            print(f"Processed Frame {frame_number}")
-            output_path = os.path.join(output_dir, 
-                                       f"Frame{frame_number}.jpg")
+            self.frame_number += 1
+            output_path = os.path.join(self.output_dir, 
+                                  f"Frame{self.frame_number}.jpg")
             cv2.imwrite(output_path, frame)
 
-            yield total_weight
+            return total_weight
 
-if __name__ == '__main__':
+        self.cap.release()
+        raise StopIteration
+
+
+# Optional script entry point for standalone testing
+if __name__ == "__main__":
+    import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--video", required=True, 
                         help="Path to input video")
-    parser.add_argument("-c", "--confidence", type=float, default=0.5,
-                        help="Minimum probability to filter weak " \
-                        "detections, format: 0.X")
-    parser.add_argument("-f", "--frequency", type=float, default=3,
-                        help="Time in seconds between each frame capture")
+    parser.add_argument("-c", "--confidence", type=float, default=0.5)
+    parser.add_argument("-f", "--frequency", type=float, default=3)
     args = vars(parser.parse_args())
 
-    model = YOLO("yolov8n.pt")
+    detector = WeightDetector(args["video"],
+                              args["confidence"],
+                              args["frequency"])
 
-    cap = cv2.VideoCapture(args["video"])
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-    frame_interval = int(fps * args["frequency"])
-    # Allow time for video or camera to initialize
-    time.sleep(1)
+    for weight in detector:
+        print(f"Detected weight: {weight}")
 
-    # Process the video and dynamically yield frame weights
-    for weight in detection(frame_interval, 
-                            args["confidence"], 
-                            model):
-        print(f"Detected weight from generator: {weight}")
-
-    cap.release()
     cv2.destroyAllWindows()

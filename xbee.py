@@ -3,7 +3,7 @@ import time
 import node
 
 # === Configuration ===
-PORT = "/dev/ttyUSB0"  # Change to match your serial port
+PORT = "COM06"  # Change to match your serial port
 BAUD_RATE = 9600
 
 device = XBeeDevice(PORT, BAUD_RATE)
