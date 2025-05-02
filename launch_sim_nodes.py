@@ -36,13 +36,12 @@ def find_working_ports():
 
     return working_ports
 
-def run_node(port, node_id):
+def run_node(port, node_id, video_path, interval=3):
     import serial
     import threading
+    import time
     from node import WeightDetector
 
-    video_path = "video.mp4"
-    detector = WeightDetector(video_path)
     def listener(ser):
         while True:
             try:
@@ -50,6 +49,22 @@ def run_node(port, node_id):
                 if line:
                     print(f"[{node_id}] Received: {line}")
             except serial.SerialException:
+                break
+
+    print(f"[{node_id}] Starting on {port}")
+    with serial.Serial(port, BAUD_RATE, timeout=1) as ser:
+        threading.Thread(target=listener, args=(ser,), daemon=True).start()
+        detector = WeightDetector(video_path)
+
+        while True:
+            try:
+                weight = next(detector)
+                message = f"{node_id} weight={weight}"
+                ser.write((message + '\n').encode())
+                print(f"[{node_id}] Sent: {message}")
+                time.sleep(interval)
+            except StopIteration:
+                print(f"[{node_id}] Video ended")
                 break
 
     def sender(ser):

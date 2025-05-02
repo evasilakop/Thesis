@@ -70,8 +70,6 @@ class WeightDetector:
         self.cap.release()
         raise StopIteration
 
-
-# Optional script entry point for standalone testing
 if __name__ == "__main__":
     import argparse
 
