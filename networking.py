@@ -1,14 +1,13 @@
 import socket
 import threading
 
-
 class MeshNode:
     def __init__(self, node_index, nodes):
         self.node_index = node_index
         self.nodes = nodes
         self.host, self.port = self.nodes[self.node_index]
+        self.received_weights = {i: None for i in range(len(self.nodes))}
 
-        # Start server for incoming messages
         self.server_thread = threading.Thread(
             target=self.server_listen, daemon=True
         )
@@ -19,32 +18,33 @@ class MeshNode:
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.bind((self.host, self.port))
         server.listen(5)
-        print(
-            f"[SERVER] Node {self.node_index} listening on "
-            f"{self.host}:{self.port}"
+        print(f"[SERVER] Node {self.node_index} listening "
+              f"on {self.host}:{self.port}"
         )
 
         while True:
             client_conn, addr = server.accept()
-            # Pass only the connection object to the handler
-            threading.Thread(
-                target=self.handle_connection, args=(client_conn,),
-                daemon=True).start()
+            threading.Thread(target=self.handle_connection, 
+                             args=(client_conn,), 
+                             daemon=True
+            ).start()
 
     def handle_connection(self, conn):
         """Handles incoming messages from other nodes."""
         data = conn.recv(1024)
         if data:
             message = data.decode()
-            # Expected format: "Node <sender_index> detected weight: <weight>"
+            # Expected format:
+            # "Node <sender_index> detected weight: <weight>"
             try:
                 tokens = message.split()
-                sender = tokens[1]
-            except IndexError:
+                sender = int(tokens[1])
+                weight_value = float(tokens[4])
+                self.received_weights[sender] = weight_value
+            except (IndexError, ValueError):
                 sender = "Unknown"
-            print(
-                f"[SERVER] Node {self.node_index} received weight update from "
-                f"Node {sender}: {message}"
+            print(f"[SERVER] Node {self.node_index} received weight "
+                  f"update from Node {sender}: {message}"
             )
         conn.close()
 
@@ -60,7 +60,8 @@ class MeshNode:
         try:
             client.connect((target_host, target_port))
             client.sendall(
-            f"Node {self.node_index} detected weight: {weight}".encode()
+                f"Node {self.node_index} detected "
+                f"weight: {weight}".encode()
             )
         finally:
             client.close()
