@@ -26,8 +26,7 @@ if __name__ == "__main__":
                         help="Detection confidence",
     )
     parser.add_argument("-f", "--frequency",
-                        type=float,
-                        default=4,
+                        type=float, default=4,
                         help="Detection frequency in seconds",
     )
     args = vars(parser.parse_args())
