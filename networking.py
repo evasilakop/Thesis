@@ -33,29 +33,41 @@ class MeshNode:
         """Handles incoming messages from other nodes."""
         data = conn.recv(1024)
         if data:
-            message = data.decode()
-            # Expected format:
-            # "Node <sender_index> detected weight: <weight>"
-            try:
-                tokens = message.split()
-                sender = int(tokens[1])
-                weight_value = float(tokens[4])
-                self.received_weights[sender] = weight_value
-            except (IndexError, ValueError):
-                sender = "Unknown"
-            print(f"[SERVER] Node {self.node_index} received weight "
-                  f"update from Node {sender}: {message}"
-            )
+            message = data.decode().strip()
+            if message == "TURN GREEN":
+                print(f"[SERVER] Node {self.node_index} received "
+                      f"control command: TURN GREEN"
+                      )
+                # code here for turning green
+            elif message == "TURN RED":
+                print(f"[SERVER] Node {self.node_index} received "
+                      f"control command: TURN RED"
+                      )
+                # code here for turning red
+            else:
+                # Handle weight updates. Expected format:
+                # "Node <sender_index> detected weight: <weight>"
+                try:
+                    tokens = message.split()
+                    sender = int(tokens[1])
+                    weight_value = float(tokens[4])
+                    self.received_weights[sender] = weight_value
+                except (IndexError, ValueError):
+                    sender = "Unknown"
+                print(
+                    f"[SERVER] Node {self.node_index} received "
+                    f"weight update from Node {sender}: {message}"
+                )
         conn.close()
 
     def broadcast_weight(self, weight):
         """Sends detected weight to all peer nodes."""
         for idx, (peer_host, peer_port) in enumerate(self.nodes):
             if idx != self.node_index:
-                self.send_to_node(peer_host, peer_port, weight)
+                self.send_weight(peer_host, peer_port, weight)
 
-    def send_to_node(self, target_host, target_port, weight):
-        """Sends weight data to a specific peer node."""
+    def send_weight(self, target_host, target_port, weight):
+        """Sends data to a specific peer node."""
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             client.connect((target_host, target_port))
@@ -63,5 +75,18 @@ class MeshNode:
                 f"Node {self.node_index} detected "
                 f"weight: {weight}".encode()
             )
+        finally:
+            client.close()
+    
+    def send_control_message(self, target_index, message):
+        """
+        Sends a control message (like "TURN GREEN" or "TURN RED")
+        to the node with the given index.
+        """
+        target_host, target_port = self.nodes[target_index]
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            client.connect((target_host, target_port))
+            client.sendall(message.encode())
         finally:
             client.close()

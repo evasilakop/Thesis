@@ -50,7 +50,8 @@ if __name__ == "__main__":
         time.sleep(4)
 
         total_nodes = len(nodes)
-        # For nodes with no update ever, use -infinity so they won't win the max.
+        # For nodes with no update ever, use -infinity so they 
+        # won't win the max.
         weights_list = []
 
         for i in range(total_nodes):
@@ -68,3 +69,11 @@ if __name__ == "__main__":
         print(f"Node with maximum weight:", max_idx, 
               f"with weight:", weights_array[max_idx]
               )
+        
+        control_message_green = "TURN GREEN"
+        control_message_red = "TURN RED"
+        node.send_control_message(max_idx, control_message_green)
+        node.send_control_message(max_idx+2, control_message_green)
+        for i in range(total_nodes):
+            if i != max_idx and i != max_idx+2:
+                node.send_control_message(i, control_message_red)
