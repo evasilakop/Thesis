@@ -29,6 +29,9 @@ if __name__ == "__main__":
                         type=float, default=4,
                         help="Detection frequency in seconds",
     )
+    parser.add_argument("-n", "--nodes",
+                        type=int, required=True,
+                        help="Amount of nodes in group")
     args = vars(parser.parse_args())
 
     detector = WeightDetector(args["video"], 
@@ -72,8 +75,18 @@ if __name__ == "__main__":
         
         control_message_green = "TURN GREEN"
         control_message_red = "TURN RED"
-        node.send_control_message(max_idx, control_message_green)
-        node.send_control_message(max_idx+2, control_message_green)
+
+        # TO DO: dynamic discovery of nodes
+        total_nodes = args["nodes"]
+        if total_nodes == 2:
+            green_nodes = [max_idx]
+            red_nodes = [i for i in range(total_nodes) if i not in green_nodes]
+        else:
+            green_nodes = [max_idx, (max_idx + 2) % total_nodes]
+            red_nodes = [i for i in range(total_nodes) if i not in green_nodes]
+            
         for i in range(total_nodes):
-            if i != max_idx and i != max_idx+2:
+            if i in green_nodes:
+                node.send_control_message(i, control_message_green)
+            else:
                 node.send_control_message(i, control_message_red)
