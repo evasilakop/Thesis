@@ -76,7 +76,6 @@ if __name__ == "__main__":
         control_message_green = "TURN GREEN"
         control_message_red = "TURN RED"
 
-        # TO DO: dynamic discovery of nodes
         total_nodes = args["nodes"]
         if total_nodes == 2:
             green_nodes = [max_idx]
