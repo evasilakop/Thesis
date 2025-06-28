@@ -1,7 +1,7 @@
 import cv2
-import os
 import time
 from ultralytics import YOLO
+
 
 class WeightDetector:
     def __init__(self, video_path, confidence=0.5, frequency=3):
@@ -14,7 +14,6 @@ class WeightDetector:
             "motorcycle": 1,
             "truck": 10
         }
-
         self.model = YOLO("yolov8n.pt")
         self.cap = cv2.VideoCapture(video_path)
         fps = int(self.cap.get(cv2.CAP_PROP_FPS))
@@ -22,28 +21,42 @@ class WeightDetector:
         self.frame_count = 0
         time.sleep(1)
 
-    def detect_weight(self):
-        """Processes frames and calculates total detected weight."""
+    def detect_vehicles(self):
         while self.cap.isOpened():
             ret, frame = self.cap.read()
             if not ret:
                 self.cap.release()
-                print(f"Video ended")
-                return None
+                print("Video ended")
+                return None, None
 
             self.frame_count += 1
             if self.frame_count % self.frame_interval != 0:
                 continue
 
-            total_weight = 0
+            detections = []
             results = self.model(frame)
             for result in results:
                 for box in result.boxes:
                     conf = box.conf[0].item()
                     cls = int(box.cls[0].item())
                     label = self.model.names[cls]
-
                     if conf > self.confidence and label in self.weight_mapping:
-                        total_weight += self.weight_mapping[label]
-
-            return total_weight
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                        detections.append({
+                            "type": label,
+                            "weight": self.weight_mapping[label],
+                            "bbox": (x1, y1, x2, y2),
+                            "conf": conf
+                        })
+                        # Draw bounding box
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                        cv2.putText(
+                            frame,
+                            f"{label} {conf:.2f}",
+                            (x1, y1 - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.5,
+                            (0, 255, 0),
+                            2
+                        )
+            return detections, frame
