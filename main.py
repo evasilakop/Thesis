@@ -42,7 +42,7 @@ def main():
 
     detector = WeightDetector(args["video"], args["confidence"], args["frequency"])
     node = MeshNode(args["index"], nodes)
-    sumo = SumoController("intersection.sumocfg", use_gui=True)
+    sumo = SumoController("intersection.sumocfg", use_gui=False)
     sumo.start()
 
     # For generating unique vehicle IDs and depart times, so that the vehicles don't

@@ -3,7 +3,7 @@ import traci.constants as tc
 import os
 
 class SumoController:
-    def __init__(self, sumo_config_path, use_gui=True):
+    def __init__(self, sumo_config_path, use_gui=False):
         """
         sumo_config_path: path to the .sumocfg file
         use_gui: if True, launches sumo-gui; otherwise, uses sumo (headless)

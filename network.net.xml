@@ -1,12 +1,16 @@
 <net>
     <location netOffset="0.00,0.00" convBoundary="-100.00,-100.00,100.00,100.00" origBoundary="-100.00,-100.00,100.00,100.00"/>
-    <edge id="N2S" from="n" to="s" priority="1" numLanes="1" speed="13.9"/>
-    <edge id="S2N" from="s" to="n" priority="1" numLanes="1" speed="13.9"/>
-    <edge id="E2W" from="e" to="w" priority="1" numLanes="1" speed="13.9"/>
-    <edge id="W2E" from="w" to="e" priority="1" numLanes="1" speed="13.9"/>
+    <edge id="N2S" from="n" to="center" priority="1" numLanes="1" speed="13.9"/>
+    <edge id="S2N" from="s" to="center" priority="1" numLanes="1" speed="13.9"/>
+    <edge id="E2W" from="e" to="center" priority="1" numLanes="1" speed="13.9"/>
+    <edge id="W2E" from="w" to="center" priority="1" numLanes="1" speed="13.9"/>
+    <edge id="S2N_out" from="center" to="n" priority="1" numLanes="1" speed="13.9"/>
+    <edge id="N2S_out" from="center" to="s" priority="1" numLanes="1" speed="13.9"/>
+    <edge id="E2W_out" from="center" to="w" priority="1" numLanes="1" speed="13.9"/>
+    <edge id="W2E_out" from="center" to="e" priority="1" numLanes="1" speed="13.9"/>
     <junction id="n" x="0.00" y="100.00" type="priority"/>
     <junction id="s" x="0.00" y="-100.00" type="priority"/>
     <junction id="e" x="100.00" y="0.00" type="priority"/>
     <junction id="w" x="-100.00" y="0.00" type="priority"/>
-    <junction id="center" x="0.00" y="0.00" type="traffic_light" incLanes="N2S_0 S2N_0 E2W_0 W2E_0" intLanes=":center_0_0 :center_1_0 :center_2_0 :center_3_0" shape="-10.00,-10.00 10.00,-10.00 10.00,10.00 -10.00,10.00"/>
+    <junction id="center" x="0.00" y="0.00" type="traffic_light"/>
 </net>

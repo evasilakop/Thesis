@@ -3,8 +3,8 @@
     <vType id="bus" accel="1.3" decel="4.0" length="12.0" maxSpeed="11.1" color="0,1,0"/>
     <vType id="truck" accel="1.0" decel="3.0" length="8.0" maxSpeed="10.0" color="0,0,1"/>
     <vType id="motorcycle" accel="3.0" decel="5.0" length="2.0" maxSpeed="15.0" color="1,1,0"/>
-    <route id="N2S" edges="N2S"/>
-    <route id="S2N" edges="S2N"/>
-    <route id="E2W" edges="E2W"/>
-    <route id="W2E" edges="W2E"/>
+    <route id="N2S" edges="N2S N2S_out"/>
+    <route id="S2N" edges="S2N S2N_out"/>
+    <route id="E2W" edges="E2W E2W_out"/>
+    <route id="W2E" edges="W2E W2E_out"/>
 </routes>
