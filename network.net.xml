@@ -1,16 +1,65 @@
-<net>
-    <location netOffset="0.00,0.00" convBoundary="-100.00,-100.00,100.00,100.00" origBoundary="-100.00,-100.00,100.00,100.00"/>
-    <edge id="N2S" from="n" to="center" priority="1" numLanes="1" speed="13.9"/>
-    <edge id="S2N" from="s" to="center" priority="1" numLanes="1" speed="13.9"/>
-    <edge id="E2W" from="e" to="center" priority="1" numLanes="1" speed="13.9"/>
-    <edge id="W2E" from="w" to="center" priority="1" numLanes="1" speed="13.9"/>
-    <edge id="S2N_out" from="center" to="n" priority="1" numLanes="1" speed="13.9"/>
-    <edge id="N2S_out" from="center" to="s" priority="1" numLanes="1" speed="13.9"/>
-    <edge id="E2W_out" from="center" to="w" priority="1" numLanes="1" speed="13.9"/>
-    <edge id="W2E_out" from="center" to="e" priority="1" numLanes="1" speed="13.9"/>
-    <junction id="n" x="0.00" y="100.00" type="priority"/>
-    <junction id="s" x="0.00" y="-100.00" type="priority"/>
-    <junction id="e" x="100.00" y="0.00" type="priority"/>
-    <junction id="w" x="-100.00" y="0.00" type="priority"/>
-    <junction id="center" x="0.00" y="0.00" type="traffic_light"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<net version="1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
+
+    <location netOffset="500.00,500.00" convBoundary="0.00,0.00,1000.00,1000.00" origBoundary="-500.00,-500.00,500.00,500.00" projParameter="!"/>
+
+    <node id="0" x="500.00" y="500.00" type="priority"/>
+    <node id="1" x="0.00" y="500.00" type="priority"/>
+    <node id="2" x="1000.00" y="500.00" type="priority"/>
+    <node id="3" x="500.00" y="0.00" type="priority"/>
+    <node id="4" x="500.00" y="1000.00" type="priority"/>
+
+    <!-- Edges for incoming and outgoing roads -->
+    <edge id="1i" from="1" to="0" priority="78">
+        <lane id="1i_0" index="0" speed="19.44" length="492.80" shape="0.00,498.40 492.80,498.40"/>
+    </edge>
+    <edge id="1o" from="0" to="1" priority="46">
+        <lane id="1o_0" index="0" speed="11.11" length="492.80" shape="492.80,501.60 0.00,501.60"/>
+    </edge>
+    <edge id="2i" from="2" to="0" priority="78">
+        <lane id="2i_0" index="0" speed="19.44" length="492.80" shape="1000.00,501.60 507.20,501.60"/>
+    </edge>
+    <edge id="2o" from="0" to="2" priority="46">
+        <lane id="2o_0" index="0" speed="11.11" length="492.80" shape="507.20,498.40 1000.00,498.40"/>
+    </edge>
+    <edge id="3i" from="3" to="0" priority="78">
+        <lane id="3i_0" index="0" speed="19.44" length="492.80" shape="501.60,0.00 501.60,492.80"/>
+    </edge>
+    <edge id="3o" from="0" to="3" priority="46">
+        <lane id="3o_0" index="0" speed="11.11" length="492.80" shape="498.40,492.80 498.40,0.00"/>
+    </edge>
+    <edge id="4i" from="4" to="0" priority="78">
+        <lane id="4i_0" index="0" speed="19.44" length="492.80" shape="498.40,1000.00 498.40,507.20"/>
+    </edge>
+    <edge id="4o" from="0" to="4" priority="46">
+        <lane id="4o_0" index="0" speed="11.11" length="492.80" shape="501.60,507.20 501.60,1000.00"/>
+    </edge>
+
+    <!-- Internal edges for straight movements -->
+    <edge id=":0_0" function="internal">
+        <lane id=":0_0_0" index="0" speed="19.44" length="10.0" shape="492.80,498.40 507.20,498.40"/>
+    </edge>
+    <edge id=":0_1" function="internal">
+        <lane id=":0_1_0" index="0" speed="19.44" length="10.0" shape="507.20,501.60 492.80,501.60"/>
+    </edge>
+    <edge id=":0_2" function="internal">
+        <lane id=":0_2_0" index="0" speed="19.44" length="10.0" shape="501.60,492.80 501.60,507.20"/>
+    </edge>
+    <edge id=":0_3" function="internal">
+        <lane id=":0_3_0" index="0" speed="19.44" length="10.0" shape="498.40,507.20 498.40,492.80"/>
+    </edge>
+
+    <!-- Main intersection junction -->
+    <junction id="0" type="priority" x="500.00" y="500.00" incLanes="4i_0 2i_0 3i_0 1i_0" intLanes="" shape="496.80,507.20 503.20,507.20 507.20,503.20 507.20,496.80 503.20,492.80 496.80,492.80 492.80,496.80 492.80,503.20"/>
+    <junction id="1" type="priority" x="0.00" y="500.00" incLanes="1o_0" intLanes="" shape="0.00,500.00 0.00,503.20 0.00,500.00"/>
+    <junction id="2" type="priority" x="1000.00" y="500.00" incLanes="2o_0" intLanes="" shape="1000.00,500.00 1000.00,496.80 1000.00,500.00"/>
+    <junction id="3" type="priority" x="500.00" y="0.00" incLanes="3o_0" intLanes="" shape="500.00,0.00 496.80,0.00 500.00,0.00"/>
+    <junction id="4" type="priority" x="500.00" y="1000.00" incLanes="4o_0" intLanes="" shape="500.00,1000.00 503.20,1000.00 500.00,1000.00"/>
+
+    <!-- Only straight connections, no turns -->
+    <connection from="1i" to="2o" fromLane="0" toLane="0" via=":0_0_0" dir="s" state="M"/>
+    <connection from="2i" to="1o" fromLane="0" toLane="0" via=":0_1_0" dir="s" state="M"/>
+    <connection from="3i" to="4o" fromLane="0" toLane="0" via=":0_2_0" dir="s" state="M"/>
+    <connection from="4i" to="3o" fromLane="0" toLane="0" via=":0_3_0" dir="s" state="M"/>
+
 </net>

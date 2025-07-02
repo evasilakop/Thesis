@@ -1,10 +1,11 @@
-<routes>
-    <vType id="car" accel="2.6" decel="4.5" length="5.0" maxSpeed="13.9" color="1,0,0"/>
-    <vType id="bus" accel="1.3" decel="4.0" length="12.0" maxSpeed="11.1" color="0,1,0"/>
-    <vType id="truck" accel="1.0" decel="3.0" length="8.0" maxSpeed="10.0" color="0,0,1"/>
-    <vType id="motorcycle" accel="3.0" decel="5.0" length="2.0" maxSpeed="15.0" color="1,1,0"/>
-    <route id="N2S" edges="N2S N2S_out"/>
-    <route id="S2N" edges="S2N S2N_out"/>
-    <route id="E2W" edges="E2W E2W_out"/>
-    <route id="W2E" edges="W2E W2E_out"/>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <vType id="SUMO_DEFAULT_TYPE" accel="0.8" decel="4.5" sigma="0" length="5" minGap="2" maxSpeed="70"/>
+    <route id="west_to_east" edges="1i 2o"/>
+    <flow id="west_to_east" type="SUMO_DEFAULT_TYPE" route="west_to_east" begin="0" end="900" period="30"/>
+    <route id="east_to_west" edges="2i 1o"/>
+    <flow id="east_to_west" type="SUMO_DEFAULT_TYPE" route="east_to_west" begin="0" end="900" period="30"/>
+    <route id="north_to_south" edges="3i 4o"/>
+    <flow id="north_to_south" type="SUMO_DEFAULT_TYPE" route="north_to_south" begin="0" end="900" period="30"/>
+    <route id="south_to_north" edges="4i 3o"/>
+    <flow id="south_to_north" type="SUMO_DEFAULT_TYPE" route="south_to_north" begin="0" end="900" period="30"/>
 </routes>

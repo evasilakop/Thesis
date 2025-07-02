@@ -42,7 +42,7 @@ def main():
 
     detector = WeightDetector(args["video"], args["confidence"], args["frequency"])
     node = MeshNode(args["index"], nodes)
-    sumo = SumoController("intersection.sumocfg", use_gui=False)
+    sumo = SumoController("intersection.sumocfg", use_gui=True)
     sumo.start()
 
     # For generating unique vehicle IDs and depart times, so that the vehicles don't
@@ -61,12 +61,12 @@ def main():
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-        # Send detected vehicles to SUMO
-        edge_from, edge_to = direction_routes[args["index"]]
         for vehicle in detections:
-            vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")  # default to 'car' if unknown
+            vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
             vehicle_id = f"veh_{args['index']}_{depart_counter}"
             route_id = f"r_{vehicle_id}"
+            # Get the direction route for this node
+            edge_from, edge_to = direction_routes[args["index"]]
             sumo.add_vehicle(vehicle_id, route_id, edge_from, edge_to, depart_time=depart_counter, vtype=vehicle_type)
             depart_counter += 1
 
@@ -85,7 +85,7 @@ def main():
         ])
         if np.all(weights_array == -float("inf")):
             print("No valid weights received from any node. Skipping control message.")
-            continue
+            #continue
 
         max_idx = np.argmax(weights_array)
         print("Weights from all nodes:", weights_array)
@@ -114,4 +114,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print("Exception occurred:", e)

@@ -3,13 +3,14 @@ import traci.constants as tc
 import os
 
 class SumoController:
-    def __init__(self, sumo_config_path, use_gui=False):
+    def __init__(self, sumo_config_path, use_gui):
         """
         sumo_config_path: path to the .sumocfg file
         use_gui: if True, launches sumo-gui; otherwise, uses sumo (headless)
         """
         sumo_binary = "sumo-gui" if use_gui else "sumo"
         self.sumo_cmd = [sumo_binary, "-c", sumo_config_path, "--start"]
+        print(f"SUMO command: {self.sumo_cmd}")
         self.started = False
 
     def start(self):
@@ -74,6 +75,7 @@ class SumoController:
         depart_time: when vehicle appears in the simulation
         vtype: SUMO vehicle type id (e.g., 'car', 'bus', 'truck', 'motorcycle')
         """
+        print(f"[SUMO] Adding vehicle {veh_id} on route {route_id} from {edge_from} to {edge_to} at time {depart_time} with type {vtype}")
         if self.started:
             if edge_from not in self.edge_list or edge_to not in self.edge_list:
                 print(f"[SUMO WARNING] Invalid edge(s): {edge_from} → {edge_to}")
