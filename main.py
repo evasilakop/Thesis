@@ -5,6 +5,8 @@ import cv2
 from sumo_controller import SumoController
 from detector import WeightDetector
 from networking import MeshNode
+import traceback
+import traci
 
 nodes = [
     ("127.0.0.1", 5001),
@@ -16,10 +18,10 @@ nodes = [
 # Define the routes for each node based on their index so that they show up correctly
 # in the simulation.
 direction_routes = [
-    ("N2S", "S2N"),
-    ("E2W", "W2E"),
-    ("S2N", "N2S"),
-    ("W2E", "E2W"),
+    ("south_north", "north_south"),  # Node 0: N2S, S2N
+    ("west_east", "east_west"),      # Node 1: E2W, W2E
+    ("north_south", "south_north"),  # Node 2: S2N, N2S
+    ("east_west", "west_east"),      # Node 3: W2E, E2W
 ]
 
 # Mapping from detected label to SUMO vType id
@@ -35,19 +37,27 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--index", type=int, required=True, help="Node index (0-3)")
     parser.add_argument("-v", "--video", required=True, help="Path to input video")
-    parser.add_argument("-c", "--confidence", type=float, default=0.5, help="Detection confidence")
-    parser.add_argument("-f", "--frequency", type=float, default=4, help="Detection frequency in seconds")
+    parser.add_argument("-c", "--confidence", type=float, default=0.5, help="Detection confidence, defaults to 50%")
+    parser.add_argument("-f", "--frequency", type=float, default=5, help="Detection frequency in seconds, defaults to 5")
     parser.add_argument("-n", "--nodes", type=int, required=True, help="Amount of nodes in group")
+    parser.add_argument("-g", "--gui", action="store_true", help="Flag to use SUMO GUI for visualization")
     args = vars(parser.parse_args())
 
     detector = WeightDetector(args["video"], args["confidence"], args["frequency"])
     node = MeshNode(args["index"], nodes)
-    sumo = SumoController("intersection.sumocfg", use_gui=True)
+    sumo = SumoController("intersection.sumocfg", use_gui=args["gui"])
     sumo.start()
+
+    print("Traffic light IDs:", traci.trafficlight.getIDList())
 
     # For generating unique vehicle IDs and depart times, so that the vehicles don't
     # spawn on top of one another.
     depart_counter = 0
+
+    # Defensive check: Ensure index is valid for direction_routes
+    if not (0 <= args["index"] < len(direction_routes)):
+        print(f"[ERROR] Invalid node index {args['index']}. Must be 0-{len(direction_routes)-1}.")
+        return
 
     while True:
         detections, frame = detector.detect_vehicles()
@@ -65,8 +75,14 @@ def main():
             vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
             vehicle_id = f"veh_{args['index']}_{depart_counter}"
             route_id = f"r_{vehicle_id}"
-            # Get the direction route for this node
-            edge_from, edge_to = direction_routes[args["index"]]
+            # Defensive check: direction_routes unpacking
+            try:
+                print(f"DEBUG: args['index'] = {args['index']}, direction_routes = {direction_routes}")
+                edge_from, edge_to = direction_routes[args["index"]]
+                print(f"Using direction_routes[{args['index']}]")
+            except Exception as e:
+                print(f"[ERROR] Could not unpack direction_routes for index {args['index']}: {e}")
+                continue
             sumo.add_vehicle(vehicle_id, route_id, edge_from, edge_to, depart_time=depart_counter, vtype=vehicle_type)
             depart_counter += 1
 
@@ -79,10 +95,15 @@ def main():
         time.sleep(args["frequency"])
 
         total_nodes = args["nodes"]
-        weights_array = np.array([
-            node.received_weights[i] if node.received_weights[i] is not None else -float("inf")
-            for i in range(total_nodes)
-        ])
+        # Defensive check: received_weights access
+        try:
+            weights_array = np.array([
+                node.received_weights[i] if node.received_weights[i] is not None else -float("inf")
+                for i in range(total_nodes)
+            ])
+        except Exception as e:
+            print(f"[ERROR] Could not build weights_array: {e}")
+            break
         if np.all(weights_array == -float("inf")):
             print("No valid weights received from any node. Skipping control message.")
             #continue
@@ -118,3 +139,4 @@ if __name__ == "__main__":
         main()
     except Exception as e:
         print("Exception occurred:", e)
+        traceback.print_exc()

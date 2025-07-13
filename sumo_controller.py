@@ -10,7 +10,6 @@ class SumoController:
         """
         sumo_binary = "sumo-gui" if use_gui else "sumo"
         self.sumo_cmd = [sumo_binary, "-c", sumo_config_path, "--start"]
-        print(f"SUMO command: {self.sumo_cmd}")
         self.started = False
 
     def start(self):

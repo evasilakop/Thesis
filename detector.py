@@ -27,7 +27,7 @@ class WeightDetector:
             if not ret:
                 self.cap.release()
                 print("Video ended")
-                return None, None
+                return [], None  # Always return a tuple
 
             self.frame_count += 1
             if self.frame_count % self.frame_interval != 0:
@@ -59,4 +59,5 @@ class WeightDetector:
                             (0, 255, 0),
                             2
                         )
-            return detections, frame
+                return detections, frame
+        return [], None  # In case the video never opens

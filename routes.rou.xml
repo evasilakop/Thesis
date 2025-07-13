@@ -1,11 +1,10 @@
-<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
-    <vType id="SUMO_DEFAULT_TYPE" accel="0.8" decel="4.5" sigma="0" length="5" minGap="2" maxSpeed="70"/>
-    <route id="west_to_east" edges="1i 2o"/>
-    <flow id="west_to_east" type="SUMO_DEFAULT_TYPE" route="west_to_east" begin="0" end="900" period="30"/>
-    <route id="east_to_west" edges="2i 1o"/>
-    <flow id="east_to_west" type="SUMO_DEFAULT_TYPE" route="east_to_west" begin="0" end="900" period="30"/>
-    <route id="north_to_south" edges="3i 4o"/>
-    <flow id="north_to_south" type="SUMO_DEFAULT_TYPE" route="north_to_south" begin="0" end="900" period="30"/>
-    <route id="south_to_north" edges="4i 3o"/>
-    <flow id="south_to_north" type="SUMO_DEFAULT_TYPE" route="south_to_north" begin="0" end="900" period="30"/>
+<routes>
+    <route id="west_to_east" edges="west_east"/>
+    <flow id="west_to_east" type="car" route="west_to_east" begin="0" end="900" period="30"/>
+    <route id="east_to_west" edges="east_west"/>
+    <flow id="east_to_west" type="car" route="east_to_west" begin="0" end="900" period="30"/>
+    <route id="north_to_south" edges="north_south"/>
+    <flow id="north_to_south" type="car" route="north_to_south" begin="0" end="900" period="30"/>
+    <route id="south_to_north" edges="south_north"/>
+    <flow id="south_to_north" type="car" route="south_to_north" begin="0" end="900" period="30"/>
 </routes>
