@@ -20,7 +20,7 @@ class SumoController:
         self.tl_id = traci.trafficlight.getIDList()[0]
         self.edge_list = traci.edge.getIDList()
         self.started = True
-        print(f"[SUMO] Simulation started with traffic light: {self.tl_id}")
+        # print(f"[SUMO] Simulation started with traffic light: {self.tl_id}")
 
     def step(self):
         if self.started:
@@ -31,15 +31,6 @@ class SumoController:
             traci.close()
             self.started = False
             print("[SUMO] Simulation closed.")
-
-    def set_light_state(self, state):
-        """
-        Set the traffic light state manually.
-        Example values: "GrGr", "rGrG", "rrrr", etc.
-        """
-        if self.started:
-            traci.trafficlight.setRedYellowGreenState(self.tl_id, state)
-            print(f"[SUMO] Set traffic light state to: {state}")
 
     def set_light_state_from_lists(self, green_nodes, red_nodes):
         """
@@ -86,9 +77,3 @@ class SumoController:
                 print(f"[SUMO] Vehicle {veh_id} (type {vtype}) added on route {edge_from} → {edge_to}")
             except traci.TraCIException as e:
                 print(f"[SUMO ERROR] Could not add vehicle {veh_id}: {e}")
-
-    def get_vehicle_count(self):
-        """Returns number of vehicles currently in simulation."""
-        if self.started:
-            return traci.simulation.getMinExpectedNumber()
-        return 0

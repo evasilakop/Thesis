@@ -18,10 +18,10 @@ nodes = [
 # Define the routes for each node based on their index so that they show up correctly
 # in the simulation.
 direction_routes = [
-    ("south_north", "north_south"),  # Node 0: N2S, S2N
-    ("west_east", "east_west"),      # Node 1: E2W, W2E
-    ("north_south", "south_north"),  # Node 2: S2N, N2S
-    ("east_west", "west_east"),      # Node 3: W2E, E2W
+    ("edge_nc", "edge_cs"),  # Node 0: North to Center, Center to South
+    ("edge_wc", "edge_ce"),  # Node 1: West to Center, Center to East
+    ("edge_sc", "edge_cn"),  # Node 2: South to Center, Center to North
+    ("edge_ec", "edge_cw"),  # Node 3: East to Center, Center to West
 ]
 
 # Mapping from detected label to SUMO vType id
@@ -31,7 +31,15 @@ label_to_sumo_type = {
     "truck": "truck",
     "motorcycle": "motorcycle"
 }
-
+def all_vehicles_stopped(vehicle_ids, threshold=0.1):
+    for vid in vehicle_ids:
+        try:
+            speed = traci.vehicle.getSpeed(vid)
+            if speed > threshold:
+                return False
+        except traci.TraCIException:
+            continue  # Vehicle may have left the network
+        return True
 
 def main():
     parser = argparse.ArgumentParser()
@@ -45,7 +53,7 @@ def main():
 
     detector = WeightDetector(args["video"], args["confidence"], args["frequency"])
     node = MeshNode(args["index"], nodes)
-    sumo = SumoController("intersection.sumocfg", use_gui=args["gui"])
+    sumo = SumoController("test_config.sumocfg", use_gui=args["gui"])
     sumo.start()
 
     print("Traffic light IDs:", traci.trafficlight.getIDList())
@@ -53,11 +61,6 @@ def main():
     # For generating unique vehicle IDs and depart times, so that the vehicles don't
     # spawn on top of one another.
     depart_counter = 0
-
-    # Defensive check: Ensure index is valid for direction_routes
-    if not (0 <= args["index"] < len(direction_routes)):
-        print(f"[ERROR] Invalid node index {args['index']}. Must be 0-{len(direction_routes)-1}.")
-        return
 
     while True:
         detections, frame = detector.detect_vehicles()
@@ -75,16 +78,17 @@ def main():
             vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
             vehicle_id = f"veh_{args['index']}_{depart_counter}"
             route_id = f"r_{vehicle_id}"
-            # Defensive check: direction_routes unpacking
-            try:
-                print(f"DEBUG: args['index'] = {args['index']}, direction_routes = {direction_routes}")
-                edge_from, edge_to = direction_routes[args["index"]]
-                print(f"Using direction_routes[{args['index']}]")
-            except Exception as e:
-                print(f"[ERROR] Could not unpack direction_routes for index {args['index']}: {e}")
-                continue
-            sumo.add_vehicle(vehicle_id, route_id, edge_from, edge_to, depart_time=depart_counter, vtype=vehicle_type)
+            edge_from, edge_to = direction_routes[args["index"]]
+            sumo.add_vehicle(
+                vehicle_id, route_id, edge_from, edge_to,
+                depart_time=depart_counter, vtype=vehicle_type
+            )
             depart_counter += 1
+        # After adding vehicles:
+        vehicle_ids = [f"veh_{args['index']}_{i}" for i in range(depart_counter - len(detections), depart_counter)]
+        while not all_vehicles_stopped(vehicle_ids):
+            sumo.step()
+            time.sleep(0.05)  # Small delay to avoid busy waiting
 
         # Weight aggregation and networking
         weight = sum(d["weight"] for d in detections)
@@ -106,11 +110,11 @@ def main():
             break
         if np.all(weights_array == -float("inf")):
             print("No valid weights received from any node. Skipping control message.")
-            #continue
+            continue
 
         max_idx = np.argmax(weights_array)
         print("Weights from all nodes:", weights_array)
-        print(f"Node with maximum weight:", max_idx, f"with weight:", weights_array[max_idx])
+        print(f"Node with maximum weight: {max_idx} with weight: {weights_array[max_idx]}")
 
         control_message_green = "TURN GREEN"
         control_message_red = "TURN RED"

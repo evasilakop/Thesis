@@ -33,7 +33,7 @@ class MeshNode:
             try:
                 client_conn, addr = server.accept()
                 client_conn.settimeout(5.0)  # Set timeout for client connection
-                print(f"[SERVER] Node {self.node_index} accepted connection from {addr}")
+                # print(f"[SERVER] Node {self.node_index} accepted connection from {addr}")
                 threading.Thread(target=self.handle_connection, 
                                  args=(client_conn,), 
                                  daemon=True
@@ -47,10 +47,10 @@ class MeshNode:
         """Handles incoming messages from other nodes."""
         try:
             data = conn.recv(1024)
-            print(f"[SERVER] Node {self.node_index} received raw data: {data}")
+            # print(f"[SERVER] Node {self.node_index} received raw data: {data}")
             if data:
                 message = data.decode().strip()
-                print(f"[SERVER] Node {self.node_index} received message: {message}")
+                # print(f"[SERVER] Node {self.node_index} received message: {message}")
                 if message == "TURN GREEN":
                     print(f"[SERVER] Node {self.node_index} received "
                           f"control command: TURN GREEN")
@@ -70,10 +70,10 @@ class MeshNode:
                     except (IndexError, ValueError) as e:
                         sender = "Unknown"
                         print(f"[SERVER ERROR] Node {self.node_index} failed to parse weight update: {e}")
-                    print(
-                        f"[SERVER] Node {self.node_index} received "
-                        f"weight update from Node {sender}: {message}"
-                    )
+                    #print(
+                    #    f"[SERVER] Node {self.node_index} received "
+                    #    f"weight update from Node {sender}: {message}"
+                    #)
         except socket.timeout:
             print(f"[SERVER ERROR] Node {self.node_index} connection timed out.")
         except Exception as e:
@@ -94,19 +94,19 @@ class MeshNode:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client.settimeout(5.0)  # Set client socket timeout to 5 seconds
             try:
-                print(f"[CLIENT] Node {self.node_index} attempting to send weight to {target_host}:{target_port} (attempt {attempt+1})")
+            #    print(f"[CLIENT] Node {self.node_index} attempting to send weight to {target_host}:{target_port} (attempt {attempt+1})")
                 client.connect((target_host, target_port))
                 client.sendall(
                     f"Node {self.node_index} detected "
                     f"weight: {weight}".encode()
                 )
-                print(f"[CLIENT] Node {self.node_index} sent weight to {target_host}:{target_port}")
+            #    print(f"[CLIENT] Node {self.node_index} sent weight to {target_host}:{target_port}")
                 break
             except socket.timeout:
-                print(f"[CLIENT ERROR] Node {self.node_index} send_weight to {target_host}:{target_port} timed out (attempt {attempt+1})")
+            #    print(f"[CLIENT ERROR] Node {self.node_index} send_weight to {target_host}:{target_port} timed out (attempt {attempt+1})")
                 time.sleep(1)
             except Exception as e:
-                print(f"[CLIENT ERROR] Node {self.node_index} send_weight to {target_host}:{target_port} failed: {e} (attempt {attempt+1})")
+            #    print(f"[CLIENT ERROR] Node {self.node_index} send_weight to {target_host}:{target_port} failed: {e} (attempt {attempt+1})")
                 time.sleep(1)
             finally:
                 client.close()
@@ -122,16 +122,16 @@ class MeshNode:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client.settimeout(5.0)  # Set client socket timeout to 5 seconds
             try:
-                print(f"[CLIENT] Node {self.node_index} attempting to send control message to {target_host}:{target_port} (attempt {attempt+1})")
+            #    print(f"[CLIENT] Node {self.node_index} attempting to send control message to {target_host}:{target_port} (attempt {attempt+1})")
                 client.connect((target_host, target_port))
                 client.sendall(message.encode())
-                print(f"[CLIENT] Node {self.node_index} sent control message to {target_host}:{target_port}")
+            #    print(f"[CLIENT] Node {self.node_index} sent control message to {target_host}:{target_port}")
                 break
             except socket.timeout:
-                print(f"[CLIENT ERROR] Node {self.node_index} send_control_message to {target_host}:{target_port} timed out (attempt {attempt+1})")
+            #    print(f"[CLIENT ERROR] Node {self.node_index} send_control_message to {target_host}:{target_port} timed out (attempt {attempt+1})")
                 time.sleep(1)
             except Exception as e:
-                print(f"[CLIENT ERROR] Node {self.node_index} send_control_message to {target_host}:{target_port} failed: {e} (attempt {attempt+1})")
+            #    print(f"[CLIENT ERROR] Node {self.node_index} send_control_message to {target_host}:{target_port} failed: {e} (attempt {attempt+1})")
                 time.sleep(1)
             finally:
                 client.close()
