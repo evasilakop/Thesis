@@ -51,6 +51,25 @@ def main():
     # spawn on top of one another.
     depart_counter = 0
 
+    # initial detection and vehicle addition may not be needed
+    detections, frame = detector.detect_vehicles()
+    for vehicle in detections:
+            vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
+            vehicle_id = f"veh_{args['index']}_{depart_counter}"
+            route_id = f"r_{vehicle_id}"
+            edge_from, edge_to = direction_routes[args["index"]]
+            sumo.add_vehicle(
+                vehicle_id, route_id, edge_from, edge_to,
+                depart_time=depart_counter, vtype=vehicle_type
+            )
+            depart_counter += 1
+
+    # Weight aggregation and networking
+    weight = sum(d["weight"] for d in detections)
+    print(f"[DETECTOR] Node {args['index']} detected weight: {weight}")
+    node.received_weights[args["index"]] = weight
+    node.broadcast_weight(weight)
+
     while True:
         detections, frame = detector.detect_vehicles()
         if detections is None:
@@ -80,7 +99,9 @@ def main():
         node.received_weights[args["index"]] = weight
         node.broadcast_weight(weight)
 
-        time.sleep(args["frequency"])
+        for _ in range(int(args["frequency"])):
+            time.sleep(1)
+            sumo.step()
 
         total_nodes = args["nodes"]
         # Defensive check: received_weights access
