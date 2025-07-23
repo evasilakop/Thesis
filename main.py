@@ -31,15 +31,6 @@ label_to_sumo_type = {
     "truck": "truck",
     "motorcycle": "motorcycle"
 }
-def all_vehicles_stopped(vehicle_ids, threshold=0.1):
-    for vid in vehicle_ids:
-        try:
-            speed = traci.vehicle.getSpeed(vid)
-            if speed > threshold:
-                return False
-        except traci.TraCIException:
-            continue  # Vehicle may have left the network
-        return True
 
 def main():
     parser = argparse.ArgumentParser()
@@ -55,8 +46,6 @@ def main():
     node = MeshNode(args["index"], nodes)
     sumo = SumoController("test_config.sumocfg", use_gui=args["gui"])
     sumo.start()
-
-    print("Traffic light IDs:", traci.trafficlight.getIDList())
 
     # For generating unique vehicle IDs and depart times, so that the vehicles don't
     # spawn on top of one another.
@@ -84,11 +73,6 @@ def main():
                 depart_time=depart_counter, vtype=vehicle_type
             )
             depart_counter += 1
-        # After adding vehicles:
-        vehicle_ids = [f"veh_{args['index']}_{i}" for i in range(depart_counter - len(detections), depart_counter)]
-        while not all_vehicles_stopped(vehicle_ids):
-            sumo.step()
-            time.sleep(0.05)  # Small delay to avoid busy waiting
 
         # Weight aggregation and networking
         weight = sum(d["weight"] for d in detections)
@@ -131,12 +115,10 @@ def main():
                 node.send_control_message(i, control_message_green)
             else:
                 node.send_control_message(i, control_message_red)
-
-        sumo.set_light_state_from_lists(green_nodes, red_nodes)
+        sumo.set_light_state_from_lists(green_nodes, red_nodes, 2)
         sumo.step()
 
     cv2.destroyAllWindows()
-
 
 if __name__ == "__main__":
     try:

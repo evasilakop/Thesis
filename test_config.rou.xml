@@ -4,11 +4,6 @@
 -->
 
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
-    <!-- VTypes -->
-    <vType id="car" accel="2.0" decel="4.5" sigma="0.5" length="5.0" minGap="2.5" maxSpeed="13.89" color="1,0,0"/>
-    <vType id="bus" accel="1.0" decel="3.0" sigma="0.5" length="12.0" minGap="3.0" maxSpeed="11.11" color="0,1,0"/>
-    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="8.0" minGap="3.0" maxSpeed="10.00" color="0,0,1"/>
-    <vType id="motorcycle" accel="2.5" decel="4.5" sigma="0.5" length="2.0" minGap="1.0" maxSpeed="15.00" color="1,1,0"/>
 
     <!-- Vehicles, persons and containers (sorted by depart) -->
     <trip id="t_0" depart="0.00" from="edge_ec" to="edge_cw"/>

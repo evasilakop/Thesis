@@ -32,24 +32,30 @@ class SumoController:
             self.started = False
             print("[SUMO] Simulation closed.")
 
-    def set_light_state_from_lists(self, green_nodes, red_nodes):
+
+    def set_light_state_from_lists(self, green_nodes, red_nodes, lanes_per_direction=1):
         """
         Convert green/red node indices to a light state string and set it in SUMO.
-        Assumes 4 light lanes (NS, EW).
+        lanes_per_direction: number of lanes per direction (1 or 2)
+        For 4 directions, total lights = 4 * lanes_per_direction
         """
         if not self.started:
             return
- 
-        # Mapping node index to position in light state string
-        # Order: [N, E, S, W] → indices 0 to 3
-        light_bits = ['r'] * 4
+
+        num_directions = 4
+        total_lights = num_directions * lanes_per_direction
+        light_bits = ['r'] * total_lights
 
         for i in green_nodes:
-            if 0 <= i < 4:
-                light_bits[i] = 'G'
+            for lane in range(lanes_per_direction):
+                idx = i * lanes_per_direction + lane
+                if 0 <= idx < total_lights:
+                    light_bits[idx] = 'G'
         for i in red_nodes:
-            if 0 <= i < 4:
-                light_bits[i] = 'r'
+            for lane in range(lanes_per_direction):
+                idx = i * lanes_per_direction + lane
+                if 0 <= idx < total_lights:
+                    light_bits[idx] = 'r'
 
         light_state = ''.join(light_bits)
         traci.trafficlight.setRedYellowGreenState(self.tl_id, light_state)
