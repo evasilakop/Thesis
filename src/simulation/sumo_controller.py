@@ -79,7 +79,12 @@ class SumoController:
 
             try:
                 traci.route.add(route_id, [edge_from, edge_to])
-                traci.vehicle.add(veh_id, route_id, typeID=vtype, depart=str(depart_time))
+                traci.vehicle.add(veh_id, 
+                                  route_id, 
+                                  typeID=vtype, 
+                                  depart=str(depart_time), 
+                                  departLane="best",
+                                  departSpeed="max")
                 print(f"[SUMO] Vehicle {veh_id} (type {vtype}) added on route {edge_from} → {edge_to}")
             except traci.TraCIException as e:
                 print(f"[SUMO ERROR] Could not add vehicle {veh_id}: {e}")

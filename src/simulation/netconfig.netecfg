@@ -6,9 +6,9 @@
 <neteditConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/neteditConfiguration.xsd">
 
     <input>
-        <sumocfg-file value="test_config.sumocfg"/>
-        <route-files value="test_config.rou.xml"/>
-        <sumo-net-file value="test_network.net.xml"/>
+        <sumocfg-file value="config.sumocfg"/>
+        <route-files value="config.rou.xml"/>
+        <sumo-net-file value="network.net.xml"/>
         <additional-files value="sumo_config.xml"/>
     </input>
 

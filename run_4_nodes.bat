@@ -1,18 +1,24 @@
 @echo off
-REM Set your working directory and environment name
-SET WORKDIR=C:\Users\eleni\Documents\GitHub\Thesis
-SET ENV=xbtest
+REM Launch 4 nodes for the project, each in a separate window
+
+REM set the workdir where the batch file is located
+SET WORKDIR=%~dp0
+SET ENV=thesis
+
 
 REM Node 0
-start "" /D "%WORKDIR%" cmd.exe /K "CALL C:\Users\eleni\anaconda3\Scripts\activate.bat %ENV% && python main.py -i 0 -v video0.mp4 -n 4 -f 7"
+start "" /D "%WORKDIR%src" cmd.exe /K "CALL C:\ProgramData\miniconda3\condabin\activate.bat %ENV% && python -m main -i 0 -v ..\videos\video0.mp4 -n 4 -g"
+ping 127.0.0.1 -n 2 -w 500 > nul
 
 REM Node 1
-start "" /D "%WORKDIR%" cmd.exe /K "CALL C:\Users\eleni\anaconda3\Scripts\activate.bat %ENV% && python main.py -i 1 -v video1.mp4 -n 4 -f 7"
+start "" /D "%WORKDIR%src" cmd.exe /K "CALL C:\ProgramData\miniconda3\condabin\activate.bat %ENV% && python -m main -i 1 -v ..\videos\video1.mp4 -n 4 "
+ping 127.0.0.1 -n 2 -w 500 > nul
 
-REM Launch node 2
-start "" /D "%WORKDIR%" cmd.exe /K "CALL C:\Users\eleni\anaconda3\Scripts\activate.bat %ENV% && python main.py -i 2 -v video2.mp4 -n 4 -f 7 -g"
+REM Node 2
+start "" /D "%WORKDIR%src" cmd.exe /K "CALL C:\ProgramData\miniconda3\condabin\activate.bat %ENV% && python -m main -i 2 -v ..\videos\video2.mp4 -n 4 "
+ping 127.0.0.1 -n 2 -w 500 > nul
 
-REM Launch node 3
-start "" /D "%WORKDIR%" cmd.exe /K "CALL C:\Users\eleni\anaconda3\Scripts\activate.bat %ENV% && python main.py -i 3 -v video3.mp4 -n 4 -f 7"
+REM Node 3
+start "" /D "%WORKDIR%src" cmd.exe /K "CALL C:\ProgramData\miniconda3\condabin\activate.bat %ENV% && python -m main -i 3 -v ..\videos\video3.mp4 -n 4 "
 
 echo All nodes launched!

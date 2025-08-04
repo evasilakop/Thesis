@@ -1,6 +1,0 @@
-<additional>
-    <vType id="car" accel="2.0" decel="4.5" sigma="0.5" length="5.0" minGap="2.5" maxSpeed="5.89" color="1,0,0" shape="passenger"/>
-    <vType id="bus" accel="1.0" decel="3.0" sigma="0.5" length="12.0" minGap="3.0" maxSpeed="3.11" color="0,1,0" shape="bus"/>
-    <vType id="truck" accel="1.0" decel="3.0" sigma="0.5" length="8.0" minGap="3.0" maxSpeed="2.00" color="0,0,1" shape="truck"/>
-    <vType id="motorcycle" accel="2.5" decel="4.5" sigma="0.5" length="2.0" minGap="1.0" maxSpeed="7.00" color="1,1,0" shape="motorcycle"/>
-</additional>

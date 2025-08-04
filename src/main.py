@@ -2,11 +2,10 @@ import argparse
 import time
 import numpy as np
 import cv2
-from sumo_controller import SumoController
+from simulation.sumo_controller import SumoController
 from detector import WeightDetector
 from networking import MeshNode
 import traceback
-import traci
 
 nodes = [
     ("127.0.0.1", 5001),
@@ -42,16 +41,17 @@ def main():
     parser.add_argument("-g", "--gui", action="store_true", help="Flag to use SUMO GUI for visualization")
     args = vars(parser.parse_args())
 
-    detector = WeightDetector(args["video"], args["confidence"], args["frequency"])
-    node = MeshNode(args["index"], nodes)
-    sumo = SumoController("test_config.sumocfg", use_gui=args["gui"])
+    empty_cycles = 0
+    max_empty_cycles = 3 
+
+    sumo = SumoController("simulation/config.sumocfg", use_gui=args["gui"])
     sumo.start()
-
-    # For generating unique vehicle IDs and depart times, so that the vehicles don't
-    # spawn on top of one another.
+    node = MeshNode(args["index"], nodes)
     depart_counter = 0
+    time.sleep(2)  # Ensure the simulation is ready before starting detection
+    detector = WeightDetector(args["video"], args["confidence"], args["frequency"])
 
-    # initial detection and vehicle addition may not be needed
+    # initial detection and vehicle addition, may not be needed
     detections, frame = detector.detect_vehicles()
     for vehicle in detections:
             vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
@@ -70,10 +70,13 @@ def main():
     node.received_weights[args["index"]] = weight
     node.broadcast_weight(weight)
 
+
     while True:
         detections, frame = detector.detect_vehicles()
         if detections is None:
             print("Video processing complete. Exiting.")
+            sumo.close()
+            cv2.destroyAllWindows()
             break
 
         # Show video with bounding boxes
@@ -82,6 +85,8 @@ def main():
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
+        # Batch add all detected vehicles with the same depart_time (current simulation step)
+        current_sim_step = depart_counter  # Or use a simulation time if available
         for vehicle in detections:
             vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
             vehicle_id = f"veh_{args['index']}_{depart_counter}"
@@ -89,8 +94,8 @@ def main():
             edge_from, edge_to = direction_routes[args["index"]]
             sumo.add_vehicle(
                 vehicle_id, route_id, edge_from, edge_to,
-                depart_time=depart_counter, vtype=vehicle_type
-            )
+                depart_time=current_sim_step, vtype=vehicle_type
+                )
             depart_counter += 1
 
         # Weight aggregation and networking
@@ -99,8 +104,9 @@ def main():
         node.received_weights[args["index"]] = weight
         node.broadcast_weight(weight)
 
+        # Step the simulation after all vehicles are added
         for _ in range(int(args["frequency"])):
-            time.sleep(1)
+            time.sleep(0.5)
             sumo.step()
 
         total_nodes = args["nodes"]
@@ -117,12 +123,21 @@ def main():
             print("No valid weights received from any node. Skipping control message.")
             continue
 
+        if np.all(weights_array == 0):
+            empty_cycles += 1
+            print(f"All nodes empty for {empty_cycles} consecutive cycles.")
+            if empty_cycles >= max_empty_cycles:
+                print("All nodes empty for too long. Exiting.")
+                break
+        else:
+            empty_cycles = 0  # Reset if any node is not empty
+
         max_idx = np.argmax(weights_array)
         print("Weights from all nodes:", weights_array)
         print(f"Node with maximum weight: {max_idx} with weight: {weights_array[max_idx]}")
 
-        control_message_green = "TURN GREEN"
-        control_message_red = "TURN RED"
+        control_message_green = "TURN GREEN\n"
+        control_message_red = "TURN RED\n"
 
         if total_nodes == 2:
             green_nodes = [max_idx]
@@ -138,8 +153,6 @@ def main():
                 node.send_control_message(i, control_message_red)
         sumo.set_light_state_from_lists(green_nodes, red_nodes, 2)
         sumo.step()
-
-    cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     try:
