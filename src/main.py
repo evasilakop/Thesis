@@ -51,37 +51,17 @@ def main():
     time.sleep(2)  # Ensure the simulation is ready before starting detection
     detector = WeightDetector(args["video"], args["confidence"], args["frequency"])
 
-    # initial detection and vehicle addition, may not be needed
-    detections, frame = detector.detect_vehicles()
-    for vehicle in detections:
-            vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
-            vehicle_id = f"veh_{args['index']}_{depart_counter}"
-            route_id = f"r_{vehicle_id}"
-            edge_from, edge_to = direction_routes[args["index"]]
-            sumo.add_vehicle(
-                vehicle_id, route_id, edge_from, edge_to,
-                depart_time=depart_counter, vtype=vehicle_type
-            )
-            depart_counter += 1
-
-    # Weight aggregation and networking
-    weight = sum(d["weight"] for d in detections)
-    print(f"[DETECTOR] Node {args['index']} detected weight: {weight}")
-    node.received_weights[args["index"]] = weight
-    node.broadcast_weight(weight)
-
-
     while True:
         detections, frame = detector.detect_vehicles()
         if detections is None:
             print("Video processing complete. Exiting.")
             sumo.close()
-            cv2.destroyAllWindows()
+            #cv2.destroyAllWindows()
             break
 
         # Show video with bounding boxes
         if frame is not None:
-            # cv2.imshow(f"Node {args['index']} Detection", frame)
+            #cv2.imshow(f"Node {args['index']} Detection", frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
@@ -106,7 +86,7 @@ def main():
 
         # Step the simulation after all vehicles are added
         for _ in range(int(args["frequency"])):
-            time.sleep(0.5)
+            time.sleep(0.2)
             sumo.step()
 
         total_nodes = args["nodes"]

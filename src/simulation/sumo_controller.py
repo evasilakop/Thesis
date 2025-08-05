@@ -71,7 +71,7 @@ class SumoController:
         depart_time: when vehicle appears in the simulation
         vtype: SUMO vehicle type id (e.g., 'car', 'bus', 'truck', 'motorcycle')
         """
-        print(f"[SUMO] Adding vehicle {veh_id} on route {route_id} from {edge_from} to {edge_to} at time {depart_time} with type {vtype}")
+        #print(f"[SUMO] Adding vehicle {veh_id} on route {route_id} from {edge_from} to {edge_to} at time {depart_time} with type {vtype}")
         if self.started:
             if edge_from not in self.edge_list or edge_to not in self.edge_list:
                 print(f"[SUMO WARNING] Invalid edge(s): {edge_from} → {edge_to}")
