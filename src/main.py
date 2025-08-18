@@ -59,14 +59,14 @@ def main():
             #cv2.destroyAllWindows()
             break
 
-        # Show video with bounding boxes
+         # Show video with bounding boxes
         if frame is not None:
             #cv2.imshow(f"Node {args['index']} Detection", frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
         # Batch add all detected vehicles with the same depart_time (current simulation step)
-        current_sim_step = depart_counter  # Or use a simulation time if available
+        current_sim_step = depart_counter
         for vehicle in detections:
             vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
             vehicle_id = f"veh_{args['index']}_{depart_counter}"
@@ -85,7 +85,7 @@ def main():
         node.broadcast_weight(weight)
 
         # Step the simulation after all vehicles are added
-        for _ in range(int(args["frequency"])):
+        for _ in range(int(args["frequency"])*5):
             time.sleep(0.2)
             sumo.step()
 
