@@ -1,1 +1,11 @@
+python 3.12
+opencv
+miniconda3
+SUMO dlr
+
+add Python and Miniconda to PATH
+allow TCP connections through the firewall for ports 5001-5004
+
+
+in the anaconda environment, install with pip:
 ultralytics
