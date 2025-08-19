@@ -19,7 +19,7 @@ class WeightDetector:
         fps = int(self.cap.get(cv2.CAP_PROP_FPS))
         self.frame_interval = int(fps * frequency)
         self.frame_count = 0
-        time.sleep(1)
+        time.sleep(1)  # allow time for the video file to open
 
     def detect_vehicles(self):
         while self.cap.isOpened():

@@ -1,9 +1,3 @@
 .vscode/launch.json
 src/__pycache__/main.cpython-312.pyc
 src/simulation/__pycache__/sumo_controller.cpython-312.pyc
-src/simulation/__pycache__/sumo_controller.cpython-312.pyc
-__pycache__/detector.cpython-312.pyc
-__pycache__/networking.cpython-312.pyc
-__pycache__/sumo_controller.cpython-312.pyc
-src/__pycache__/main.cpython-312.pyc
-src/simulation/__pycache__/sumo_controller.cpython-312.pyc

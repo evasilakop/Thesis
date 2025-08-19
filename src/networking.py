@@ -31,7 +31,7 @@ class MeshNode:
 
         while self._running:
             try:
-                client_conn, addr = self._server_socket.accept()
+                client_conn, _ = self._server_socket.accept()
                 client_conn.settimeout(5.0)
                 threading.Thread(target=self.handle_connection, args=(client_conn,), daemon=True).start()
             except socket.timeout:
@@ -74,7 +74,7 @@ class MeshNode:
     def send_weight(self, target_host, target_port, weight):
         """Sends data to a specific peer node."""
         max_retries = 5
-        for attempt in range(max_retries):
+        for _ in range(max_retries):
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client.settimeout(5.0)
             try:
@@ -92,7 +92,7 @@ class MeshNode:
         """Sends a control message ('TURN GREEN' or 'TURN RED') to the node with the given index."""
         target_host, target_port = self.nodes[target_index]
         max_retries = 5
-        for attempt in range(max_retries):
+        for _ in range(max_retries):
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client.settimeout(5.0)
             try:
