@@ -1,22 +1,8 @@
 import traci
 import traci.constants as tc
 import os
-import logging 
-import subprocess
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.StreamHandler(),            # console
-        logging.FileHandler("simulation.log")  # file
-    ]
-)
-logger = logging.getLogger(__name__)
 
 class SumoController:
-
     def __init__(self, sumo_config_path, use_gui):
         """
         sumo_config_path: path to the .sumocfg file
@@ -28,15 +14,13 @@ class SumoController:
 
     def start(self):
         """Start the SUMO simulation."""
-
-        logfile = open("sumo_raw.log", "w")
-        traci.start(self.sumo_cmd, stdout=logfile, stderr=logfile)
-        logger.info("SUMO started")
         if not os.path.exists(self.sumo_cmd[2]):
             raise FileNotFoundError(f"SUMO config file not found: {self.sumo_cmd[2]}")
+        traci.start(self.sumo_cmd)
         self.tl_id = traci.trafficlight.getIDList()[0]
         self.edge_list = traci.edge.getIDList()
         self.started = True
+        # print(f"[SUMO] Simulation started with traffic light: {self.tl_id}")
 
     def step(self):
         if self.started:
@@ -46,7 +30,7 @@ class SumoController:
         if self.started:
             traci.close()
             self.started = False
-            logger.info("[SUMO] Simulation closed.")
+            print("[SUMO] Simulation closed.")
 
 
     def set_light_state_from_lists(self, green_nodes, red_nodes, lanes_per_direction=1):
@@ -75,7 +59,6 @@ class SumoController:
 
         light_state = ''.join(light_bits)
         traci.trafficlight.setRedYellowGreenState(self.tl_id, light_state)
-        logger.info(f"[SUMO] Traffic light state set to: {light_state}")
         print(f"[SUMO] Traffic light state set to: {light_state}")
 
 
@@ -88,10 +71,10 @@ class SumoController:
         depart_time: when vehicle appears in the simulation
         vtype: SUMO vehicle type id (e.g., 'car', 'bus', 'truck', 'motorcycle')
         """
-        logger(f"[SUMO] Adding vehicle {veh_id} on route {route_id} from {edge_from} to {edge_to} at time {depart_time} with type {vtype}")
+        #print(f"[SUMO] Adding vehicle {veh_id} on route {route_id} from {edge_from} to {edge_to} at time {depart_time} with type {vtype}")
         if self.started:
             if edge_from not in self.edge_list or edge_to not in self.edge_list:
-                logger.warning(f"[SUMO] Invalid edge(s): {edge_from} → {edge_to}")
+                print(f"[SUMO WARNING] Invalid edge(s): {edge_from} → {edge_to}")
                 return
 
             try:
@@ -102,5 +85,6 @@ class SumoController:
                                   depart=str(depart_time), 
                                   departLane="best",
                                   departSpeed="max")
+                print(f"[SUMO] Vehicle {veh_id} (type {vtype}) added on route {edge_from} → {edge_to}")
             except traci.TraCIException as e:
-                logger.error(f"[SUMO] Could not add vehicle {veh_id}: {e}")
+                print(f"[SUMO ERROR] Could not add vehicle {veh_id}: {e}")
