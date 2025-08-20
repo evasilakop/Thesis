@@ -1,5 +1,4 @@
 import traci
-import traci.constants as tc
 import os
 
 class SumoController:
@@ -9,7 +8,7 @@ class SumoController:
         use_gui: if True, launches sumo-gui; otherwise, uses sumo (headless)
         """
         sumo_binary = "sumo-gui" if use_gui else "sumo"
-        self.sumo_cmd = [sumo_binary, "-c", sumo_config_path, "--start"]
+        self.sumo_cmd = [sumo_binary, "-c", sumo_config_path, "--log", "logs/sumo_log.log", "--log.timestamps", "--no-warnings", "--start"]
         self.started = False
 
     def start(self):
@@ -20,7 +19,6 @@ class SumoController:
         self.tl_id = traci.trafficlight.getIDList()[0]
         self.edge_list = traci.edge.getIDList()
         self.started = True
-        # print(f"[SUMO] Simulation started with traffic light: {self.tl_id}")
 
     def step(self):
         if self.started:
@@ -30,7 +28,6 @@ class SumoController:
         if self.started:
             traci.close()
             self.started = False
-            print("[SUMO] Simulation closed.")
 
 
     def set_light_state_from_lists(self, green_nodes, red_nodes, lanes_per_direction=1):
@@ -71,11 +68,9 @@ class SumoController:
         depart_time: when vehicle appears in the simulation
         vtype: SUMO vehicle type id (e.g., 'car', 'bus', 'truck', 'motorcycle')
         """
-        #print(f"[SUMO] Adding vehicle {veh_id} on route {route_id} from {edge_from} to {edge_to} at time {depart_time} with type {vtype}")
         if self.started:
             if edge_from not in self.edge_list or edge_to not in self.edge_list:
-                print(f"[SUMO WARNING] Invalid edge(s): {edge_from} → {edge_to}")
-                return
+                raise ValueError(f"[SUMO ERROR] Invalid edge(s): {edge_from} > {edge_to}")
 
             try:
                 traci.route.add(route_id, [edge_from, edge_to])
@@ -85,6 +80,6 @@ class SumoController:
                                   depart=str(depart_time), 
                                   departLane="best",
                                   departSpeed="max")
-                print(f"[SUMO] Vehicle {veh_id} (type {vtype}) added on route {edge_from} → {edge_to}")
+                # print(f"[SUMO] Vehicle {veh_id} (type {vtype}) added on route {edge_from} > {edge_to}")
             except traci.TraCIException as e:
-                print(f"[SUMO ERROR] Could not add vehicle {veh_id}: {e}")
+                raise ValueError(f"[SUMO ERROR] Could not add vehicle {veh_id}: {e}")

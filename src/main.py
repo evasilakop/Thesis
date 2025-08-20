@@ -2,10 +2,25 @@ import argparse
 import time
 import numpy as np
 import cv2
+import traceback
+import logging
+import os
+
 from simulation.sumo_controller import SumoController
 from detector import WeightDetector
 from networking import MeshNode
-import traceback
+
+
+os.makedirs("logs", exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.StreamHandler(),  # console
+        logging.FileHandler("logs/simulation.log")  # file
+    ]
+)
+logger = logging.getLogger(__name__)
 
 nodes = [
     ("127.0.0.1", 5001),
@@ -32,6 +47,90 @@ label_to_sumo_type = {
 }
 
 def main():
+    args = arguments_parser()
+    empty_cycles = 0
+    max_empty_cycles = 3 
+    node = MeshNode(args["index"], nodes)
+    depart_counter = 0
+
+    sumo = SumoController("simulation/config.sumocfg", use_gui=args["gui"])
+    sumo.start()
+    time.sleep(2)  # Ensure the simulation is ready before starting detection
+
+    detector = WeightDetector(args["video"], args["confidence"], args["frequency"])
+
+    while True:
+        detections, frame = detector.detect_vehicles()
+        if detections == [] and frame is None:
+            logger.info("Video processing complete. Exiting.")
+            close(sumo)
+            break
+
+        #display_video_feed_with_bounding_boxes(args, frame)
+        
+        depart_counter = send_vehicles_to_sumo(args, sumo, depart_counter, detections)
+
+        # Weight aggregation and networking
+        weight = sum(d["weight"] for d in detections)
+        logger.info(f"[DETECTOR] Node {args['index']} detected weight: {weight}")
+        node.received_weights[args["index"]] = weight
+        node.broadcast_weight(weight)
+
+        advance_simulation(args, sumo)
+
+        total_nodes = args["nodes"]
+        # Defensive check: if a light doesn't start, we assume its weight is -inf
+        try:
+            weights_array = np.array([
+                node.received_weights[i] if node.received_weights[i] is not None else -float("inf")
+                for i in range(total_nodes)
+            ])
+        except Exception as e:
+            logger.exception(f"[ERROR] Could not build weights_array: {e}")
+
+        if np.all((weights_array == -float("inf")) | (weights_array == 0)):
+            empty_cycles += 1
+            logger.warning("No valid weights received from any node. Skipping control message.")
+            logger.info(f"All nodes empty for {empty_cycles} consecutive cycles.")
+            if empty_cycles >= max_empty_cycles:
+                logger.info("All nodes empty for too long. Exiting.")
+                close(sumo)
+                break
+        else:
+            empty_cycles = 0  # Reset if any node is not empty
+
+        max_idx = np.argmax(weights_array)
+        logger.info(f"Weights from all nodes: {weights_array}")
+        logger.info(f"Node with maximum weight: {max_idx} with weight: {weights_array[max_idx]}")
+
+        send_control_messages(sumo, node, total_nodes, max_idx)
+        sumo.step()
+
+def display_video_feed_with_bounding_boxes(args, frame):
+    """Displays the video feed with bounding boxes for the specified node.
+
+    Args:
+        args (dict): The arguments passed to the simulation.
+        frame (ndarray): The current video frame.
+    """
+    if frame is not None:
+        cv2.imshow(f"Node {args['index']} Detection", frame)
+
+def close(sumo):
+    """Closes all open windows and cleans up resources
+
+    Args:
+        sumo (SumoController): The SUMO controller instance
+    """
+    sumo.close()
+    #cv2.destroyAllWindows()
+
+def arguments_parser():
+    """Parses command line arguments for the simulation
+
+    Returns:
+        dict: A dictionary containing the parsed arguments
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--index", type=int, required=True, help="Node index (0-3)")
     parser.add_argument("-v", "--video", required=True, help="Path to input video")
@@ -40,103 +139,74 @@ def main():
     parser.add_argument("-n", "--nodes", type=int, required=True, help="Amount of nodes in group")
     parser.add_argument("-g", "--gui", action="store_true", help="Flag to use SUMO GUI for visualization")
     args = vars(parser.parse_args())
+    return args
 
-    empty_cycles = 0
-    max_empty_cycles = 3 
 
-    sumo = SumoController("simulation/config.sumocfg", use_gui=args["gui"])
-    sumo.start()
-    node = MeshNode(args["index"], nodes)
-    depart_counter = 0
-    time.sleep(2)  # Ensure the simulation is ready before starting detection
-    detector = WeightDetector(args["video"], args["confidence"], args["frequency"])
+def send_control_messages(sumo, node, total_nodes, max_idx):
+    """Sends control messages to the SUMO simulation
 
-    while True:
-        detections, frame = detector.detect_vehicles()
-        if detections is None:
-            print("Video processing complete. Exiting.")
-            sumo.close()
-            #cv2.destroyAllWindows()
-            break
+    Args:
+        sumo (SumoController): The SUMO controller instance
+        node (MeshNode): The mesh node instance
+        total_nodes (int): The total number of nodes
+        max_idx (int): The index of the node with the maximum weight
+    """
+    control_message_green = "TURN GREEN\n"
+    control_message_red = "TURN RED\n"
 
-         # Show video with bounding boxes
-        if frame is not None:
-            #cv2.imshow(f"Node {args['index']} Detection", frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+    if total_nodes == 2:
+        green_nodes = [max_idx]
+        red_nodes = [i for i in range(total_nodes) if i not in green_nodes]
+    else:
+        green_nodes = [max_idx, (max_idx + 2) % total_nodes]
+        red_nodes = [i for i in range(total_nodes) if i not in green_nodes]
 
-        # Batch add all detected vehicles with the same depart_time (current simulation step)
-        current_sim_step = depart_counter
-        for vehicle in detections:
-            vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
-            vehicle_id = f"veh_{args['index']}_{depart_counter}"
-            route_id = f"r_{vehicle_id}"
-            edge_from, edge_to = direction_routes[args["index"]]
-            sumo.add_vehicle(
+    for i in range(total_nodes):
+        if i in green_nodes:
+            node.send_control_message(i, control_message_green)
+        else:
+            node.send_control_message(i, control_message_red)
+    sumo.set_light_state_from_lists(green_nodes, red_nodes, 2)
+
+def send_vehicles_to_sumo(args, sumo, depart_counter, detections):
+    """Sends vehicle information to the SUMO simulation
+
+    Args:
+        args (dict): The arguments passed to the simulation
+        sumo (SumoController): The SUMO controller instance
+        depart_counter (int): The current departure counter
+        detections (list): The list of detected vehicles
+
+    Returns:
+        int: The updated departure counter
+    """
+    current_sim_step = depart_counter
+    for vehicle in detections:
+        vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
+        vehicle_id = f"veh_{args['index']}_{depart_counter}"
+        route_id = f"r_{vehicle_id}"
+        edge_from, edge_to = direction_routes[args["index"]]
+        sumo.add_vehicle(
                 vehicle_id, route_id, edge_from, edge_to,
                 depart_time=current_sim_step, vtype=vehicle_type
                 )
-            depart_counter += 1
+        depart_counter += 1
+    return depart_counter
 
-        # Weight aggregation and networking
-        weight = sum(d["weight"] for d in detections)
-        print(f"[DETECTOR] Node {args['index']} detected weight: {weight}")
-        node.received_weights[args["index"]] = weight
-        node.broadcast_weight(weight)
+def advance_simulation(args, sumo):
+    """Advances the SUMO simulation according to the frequency
 
-        # Step the simulation after all vehicles are added
-        for _ in range(int(args["frequency"])*5):
-            time.sleep(0.2)
-            sumo.step()
-
-        total_nodes = args["nodes"]
-        # Defensive check: received_weights access
-        try:
-            weights_array = np.array([
-                node.received_weights[i] if node.received_weights[i] is not None else -float("inf")
-                for i in range(total_nodes)
-            ])
-        except Exception as e:
-            print(f"[ERROR] Could not build weights_array: {e}")
-            break
-        if np.all(weights_array == -float("inf")):
-            print("No valid weights received from any node. Skipping control message.")
-            continue
-
-        if np.all(weights_array == 0):
-            empty_cycles += 1
-            print(f"All nodes empty for {empty_cycles} consecutive cycles.")
-            if empty_cycles >= max_empty_cycles:
-                print("All nodes empty for too long. Exiting.")
-                break
-        else:
-            empty_cycles = 0  # Reset if any node is not empty
-
-        max_idx = np.argmax(weights_array)
-        print("Weights from all nodes:", weights_array)
-        print(f"Node with maximum weight: {max_idx} with weight: {weights_array[max_idx]}")
-
-        control_message_green = "TURN GREEN\n"
-        control_message_red = "TURN RED\n"
-
-        if total_nodes == 2:
-            green_nodes = [max_idx]
-            red_nodes = [i for i in range(total_nodes) if i not in green_nodes]
-        else:
-            green_nodes = [max_idx, (max_idx + 2) % total_nodes]
-            red_nodes = [i for i in range(total_nodes) if i not in green_nodes]
-
-        for i in range(total_nodes):
-            if i in green_nodes:
-                node.send_control_message(i, control_message_green)
-            else:
-                node.send_control_message(i, control_message_red)
-        sumo.set_light_state_from_lists(green_nodes, red_nodes, 2)
+    Args:
+        args (dict): The arguments passed to the simulation
+        sumo (SumoController): The SUMO controller instance
+    """
+    for _ in range(int(args["frequency"])*5):
+        time.sleep(0.2)
         sumo.step()
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        print("Exception occurred:", e)
+        logger.exception(f"Exception occurred: {e}")
         traceback.print_exc()

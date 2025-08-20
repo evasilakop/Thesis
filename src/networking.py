@@ -21,9 +21,9 @@ class MeshNode:
         """Starts the server to listen for incoming weight data."""
         try:
             self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._server_socket.settimeout(5.0)
+            self._server_socket.settimeout(3.0)
             self._server_socket.bind((self.host, self.port))
-            self._server_socket.listen(5)
+            self._server_socket.listen(3)
             print(f"[SERVER] Node {self.node_index} listening on {self.host}:{self.port}")
         except Exception as e:
             print(f"[SERVER ERROR] Node {self.node_index} failed to start server: {e}")
@@ -31,8 +31,8 @@ class MeshNode:
 
         while self._running:
             try:
-                client_conn, addr = self._server_socket.accept()
-                client_conn.settimeout(5.0)
+                client_conn, _ = self._server_socket.accept()
+                client_conn.settimeout(3.0)
                 threading.Thread(target=self.handle_connection, args=(client_conn,), daemon=True).start()
             except socket.timeout:
                 continue
@@ -41,7 +41,11 @@ class MeshNode:
                     print(f"[SERVER ERROR] Node {self.node_index} accept failed: {e}")
 
     def handle_connection(self, conn):
-        """Handles incoming messages from other nodes."""
+        """Handles incoming connections from other nodes.
+
+        Args:
+            conn (_type_): _description_
+        """
         try:
             data = conn.recv(1024)
             if data:
@@ -73,10 +77,10 @@ class MeshNode:
 
     def send_weight(self, target_host, target_port, weight):
         """Sends data to a specific peer node."""
-        max_retries = 5
-        for attempt in range(max_retries):
-            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client.settimeout(5.0)
+        max_retries = 3
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.settimeout(3.0)
+        for _ in range(max_retries):
             try:
                 client.connect((target_host, target_port))
                 client.sendall(f"Node {self.node_index} detected weight: {weight}".encode())
@@ -85,14 +89,13 @@ class MeshNode:
                 time.sleep(1)
             except Exception:
                 time.sleep(1)
-            finally:
-                client.close()
+        client.close()
     
     def send_control_message(self, target_index, message):
         """Sends a control message ('TURN GREEN' or 'TURN RED') to the node with the given index."""
         target_host, target_port = self.nodes[target_index]
         max_retries = 5
-        for attempt in range(max_retries):
+        for _ in range(max_retries):
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client.settimeout(5.0)
             try:
@@ -103,14 +106,10 @@ class MeshNode:
                 time.sleep(1)
             except Exception:
                 time.sleep(1)
-            finally:
-                client.close()
+        client.close()
 
     def close(self):
         """Shuts down the server socket and stops the server thread."""
         self._running = False
         if self._server_socket:
-            try:
-                self._server_socket.close()
-            except Exception:
-                pass
+            self._server_socket.close()

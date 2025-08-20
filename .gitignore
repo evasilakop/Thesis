@@ -7,3 +7,6 @@ __pycache__/networking.cpython-312.pyc
 __pycache__/sumo_controller.cpython-312.pyc
 src/__pycache__/main.cpython-312.pyc
 src/simulation/__pycache__/sumo_controller.cpython-312.pyc
+src/sumo_log.log
+src/logs/simulation.log
+src/logs/sumo_log.log
