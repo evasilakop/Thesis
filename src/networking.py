@@ -54,7 +54,7 @@ class MeshNode:
                     print(f"[SERVER] Node {self.node_index} received control command: TURN GREEN")
                 elif message == "TURN RED":
                     print(f"[SERVER] Node {self.node_index} received control command: TURN RED")
-                else:
+                elif message.startswith("Node") and "detected weight:" in message:
                     try:
                         tokens = message.split()
                         sender = int(tokens[1])
@@ -62,6 +62,13 @@ class MeshNode:
                         self.received_weights[sender] = weight_value
                     except (IndexError, ValueError) as e:
                         print(f"[SERVER ERROR] Node {self.node_index} failed to parse weight update: {e}")
+                else:
+                    print(message)
+                    try:
+                        tokens = message.split()
+                        #FIXME
+                    except (IndexError, ValueError) as e:
+                        print(f"[SERVER ERROR] Node {self.node_index} failed to parse message: {e}")
         except socket.timeout:
             print(f"[SERVER ERROR] Node {self.node_index} connection timed out.")
         except Exception as e:
@@ -113,3 +120,25 @@ class MeshNode:
         self._running = False
         if self._server_socket:
             self._server_socket.close()
+
+    def broadcast_message(self, message):
+        """Sends detected weight to all peer nodes."""
+        for idx, (peer_host, peer_port) in enumerate(self.nodes):
+            if idx != self.node_index:
+                self.send_message(peer_host, peer_port, message)
+
+    def send_message(self, target_host, target_port, message):
+        """Sends data to a specific peer node."""
+        max_retries = 3
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.settimeout(3.0)
+        for _ in range(max_retries):
+            try:
+                client.connect((target_host, target_port))
+                client.sendall(f"Message from node {self.node_index} : {message}".encode())
+                break
+            except socket.timeout:
+                time.sleep(1)
+            except Exception:
+                time.sleep(1)
+        client.close()

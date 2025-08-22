@@ -50,7 +50,7 @@ def main():
     args = arguments_parser()
     empty_cycles = 0
     max_empty_cycles = 3 
-    node = MeshNode(args["index"], nodes)
+    main.node = MeshNode(args["index"], nodes)
     depart_counter = 0
 
     sumo = SumoController("simulation/config.sumocfg", use_gui=args["gui"])
@@ -67,14 +67,14 @@ def main():
             break
 
         #display_video_feed_with_bounding_boxes(args, frame)
-        
+        broadcast_sumo_vehicles(detections, args, depart_counter)
         depart_counter = send_vehicles_to_sumo(args, sumo, depart_counter, detections)
 
         # Weight aggregation and networking
         weight = sum(d["weight"] for d in detections)
         logger.info(f"[DETECTOR] Node {args['index']} detected weight: {weight}")
-        node.received_weights[args["index"]] = weight
-        node.broadcast_weight(weight)
+        main.node.received_weights[args["index"]] = weight
+        main.node.broadcast_weight(weight)
 
         advance_simulation(args, sumo)
 
@@ -82,7 +82,7 @@ def main():
         # Defensive check: if a light doesn't start, we assume its weight is -inf
         try:
             weights_array = np.array([
-                node.received_weights[i] if node.received_weights[i] is not None else -float("inf")
+                main.node.received_weights[i] if main.node.received_weights[i] is not None else -float("inf")
                 for i in range(total_nodes)
             ])
         except Exception as e:
@@ -103,7 +103,7 @@ def main():
         logger.info(f"Weights from all nodes: {weights_array}")
         logger.info(f"Node with maximum weight: {max_idx} with weight: {weights_array[max_idx]}")
 
-        send_control_messages(sumo, node, total_nodes, max_idx)
+        send_control_messages(sumo, total_nodes, max_idx)
         sumo.step()
 
 def display_video_feed_with_bounding_boxes(args, frame):
@@ -142,7 +142,7 @@ def arguments_parser():
     return args
 
 
-def send_control_messages(sumo, node, total_nodes, max_idx):
+def send_control_messages(sumo, total_nodes, max_idx):
     """Sends control messages to the SUMO simulation
 
     Args:
@@ -163,9 +163,9 @@ def send_control_messages(sumo, node, total_nodes, max_idx):
 
     for i in range(total_nodes):
         if i in green_nodes:
-            node.send_control_message(i, control_message_green)
+            main.node.send_control_message(i, control_message_green)
         else:
-            node.send_control_message(i, control_message_red)
+            main.node.send_control_message(i, control_message_red)
     sumo.set_light_state_from_lists(green_nodes, red_nodes, 2)
 
 def send_vehicles_to_sumo(args, sumo, depart_counter, detections):
@@ -192,6 +192,16 @@ def send_vehicles_to_sumo(args, sumo, depart_counter, detections):
                 )
         depart_counter += 1
     return depart_counter
+
+def broadcast_sumo_vehicles(detections, args, depart_counter):
+    """Broadcasts vehicle information to all nodes."""
+    for vehicle in detections:
+        vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
+        vehicle_id = f"veh_{args['index']}_{depart_counter}"
+        route_id = f"r_{vehicle_id}"
+        edge_from, edge_to = direction_routes[args["index"]]
+        main.node.broadcast_message(f"Vehicle data from node {args['index']}: {vehicle_id}, {route_id}, {edge_from}, {edge_to}, {depart_counter}, {vehicle_type}")
+        depart_counter += 1
 
 def advance_simulation(args, sumo):
     """Advances the SUMO simulation according to the frequency
