@@ -50,11 +50,10 @@ def main():
     args = arguments_parser()
     empty_cycles = 0
     max_empty_cycles = 3 
-    main.node = MeshNode(args["index"], nodes)
-    depart_counter = 0
-
     sumo = SumoController("simulation/config.sumocfg", use_gui=args["gui"])
     sumo.start()
+    main.node = MeshNode(args["index"], nodes, sumo=sumo)
+    depart_counter = 0
     time.sleep(2)  # Ensure the simulation is ready before starting detection
 
     detector = WeightDetector(args["video"], args["confidence"], args["frequency"])
@@ -129,7 +128,7 @@ def arguments_parser():
     """Parses command line arguments for the simulation
 
     Returns:
-        dict: A dictionary containing the parsed arguments
+        args: A dictionary containing the parsed arguments
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--index", type=int, required=True, help="Node index (0-3)")
@@ -140,7 +139,6 @@ def arguments_parser():
     parser.add_argument("-g", "--gui", action="store_true", help="Flag to use SUMO GUI for visualization")
     args = vars(parser.parse_args())
     return args
-
 
 def send_control_messages(sumo, total_nodes, max_idx):
     """Sends control messages to the SUMO simulation
@@ -200,7 +198,9 @@ def broadcast_sumo_vehicles(detections, args, depart_counter):
         vehicle_id = f"veh_{args['index']}_{depart_counter}"
         route_id = f"r_{vehicle_id}"
         edge_from, edge_to = direction_routes[args["index"]]
-        main.node.broadcast_message(f"Vehicle data from node {args['index']}: {vehicle_id}, {route_id}, {edge_from}, {edge_to}, {depart_counter}, {vehicle_type}")
+        main.node.broadcast_message(f"Vehicle data from node {args['index']}: "
+                                    f"{vehicle_id}, {route_id}, {edge_from}, {edge_to}, "
+                                    f"{depart_counter}, {vehicle_type}")
         depart_counter += 1
 
 def advance_simulation(args, sumo):

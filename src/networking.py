@@ -3,13 +3,14 @@ import threading
 import time
 
 class MeshNode:
-    def __init__(self, node_index, nodes):
+    def __init__(self, node_index, nodes, sumo=None):
         self.node_index = node_index
         self.nodes = nodes
         self.host, self.port = self.nodes[self.node_index]
         self.received_weights = {i: None for i in range(len(self.nodes))}
         self._server_socket = None
         self._running = True
+        self.sumo = sumo
         self.server_thread = threading.Thread(
             target=self.server_listen, daemon=True
         )
@@ -42,9 +43,6 @@ class MeshNode:
 
     def handle_connection(self, conn):
         """Handles incoming connections from other nodes.
-
-        Args:
-            conn (_type_): _description_
         """
         try:
             data = conn.recv(1024)
@@ -62,13 +60,25 @@ class MeshNode:
                         self.received_weights[sender] = weight_value
                     except (IndexError, ValueError) as e:
                         print(f"[SERVER ERROR] Node {self.node_index} failed to parse weight update: {e}")
-                else:
-                    print(message)
+                elif "Vehicle data from node" in message:
                     try:
-                        tokens = message.split()
-                        #FIXME
-                    except (IndexError, ValueError) as e:
-                        print(f"[SERVER ERROR] Node {self.node_index} failed to parse message: {e}")
+                        data_part = message.split(":", 1)[1].strip()
+                        vehicle_fields = [field.strip() for field in data_part.split(",")]
+                        vehicle_id = vehicle_fields[0]
+                        route_id = vehicle_fields[1]
+                        edge_from = vehicle_fields[2]
+                        edge_to = vehicle_fields[3]
+                        depart_counter = int(vehicle_fields[4])
+                        vehicle_type = vehicle_fields[5]
+                        if self.sumo is not None:
+                            self.sumo.add_vehicle(vehicle_id, route_id, edge_from, edge_to, depart_time=depart_counter, vtype=vehicle_type)
+                            print(f"[SERVER] Node {self.node_index} added vehicle {vehicle_id} to SUMO.")
+                        else:
+                            print(f"[SERVER WARNING] SumoController not set for Node {self.node_index}, cannot add vehicle.")
+                    except Exception as e:
+                        print(f"[SERVER ERROR] Node {self.node_index} failed to parse vehicle data: {e}")
+                else: 
+                    print(f"[SERVER WARNING] Node {self.node_index} received unknown message: {message}")
         except socket.timeout:
             print(f"[SERVER ERROR] Node {self.node_index} connection timed out.")
         except Exception as e:

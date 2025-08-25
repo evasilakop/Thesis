@@ -69,9 +69,9 @@ class SumoController:
         vtype: SUMO vehicle type id (e.g., 'car', 'bus', 'truck', 'motorcycle')
         """
         if self.started:
+            print(f"[SUMO] Adding vehicle {veh_id} on route {edge_from} > {edge_to} at time {depart_time} as type {vtype}")
             if edge_from not in self.edge_list or edge_to not in self.edge_list:
                 raise ValueError(f"[SUMO ERROR] Invalid edge(s): {edge_from} > {edge_to}")
-
             try:
                 traci.route.add(route_id, [edge_from, edge_to])
                 traci.vehicle.add(veh_id, 
@@ -83,3 +83,5 @@ class SumoController:
                 # print(f"[SUMO] Vehicle {veh_id} (type {vtype}) added on route {edge_from} > {edge_to}")
             except traci.TraCIException as e:
                 raise ValueError(f"[SUMO ERROR] Could not add vehicle {veh_id}: {e}")
+        else:
+            print(f"[SUMO WARNING] Cannot add vehicle {veh_id}, SUMO not started.")
