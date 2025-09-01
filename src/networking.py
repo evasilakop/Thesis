@@ -72,7 +72,6 @@ class MeshNode:
                         vehicle_type = vehicle_fields[5]
                         if self.sumo is not None:
                             self.sumo.add_vehicle(vehicle_id, route_id, edge_from, edge_to, depart_time=depart_counter, vtype=vehicle_type)
-                            print(f"[SERVER] Node {self.node_index} added vehicle {vehicle_id} to SUMO.")
                         else:
                             print(f"[SERVER WARNING] SumoController not set for Node {self.node_index}, cannot add vehicle.")
                     except Exception as e:

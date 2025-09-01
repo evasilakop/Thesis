@@ -4,10 +4,10 @@ from ultralytics import YOLO
 
 
 class WeightDetector:
-    """ Detects vehicles in a video stream and estimates their weight according to the 
-        predetermined weight mapping for each type of vehicle.
+    """ Detects vehicles in a video stream and estimates their total weight 
+        according to the predetermined weight mapping for each type of vehicle.
     """
-    def __init__(self, video_path, confidence=0.5, frequency=5):
+    def __init__(self, video_path, confidence=0.5, frequency=15):
         self.video_path = video_path
         self.confidence = confidence
         self.frequency = frequency

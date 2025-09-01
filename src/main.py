@@ -10,7 +10,6 @@ from simulation.sumo_controller import SumoController
 from detector import WeightDetector
 from networking import MeshNode
 
-
 os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -29,13 +28,18 @@ nodes = [
     ("127.0.0.1", 5004),
 ]
 
-# Define the routes for each node based on their index so that they show up correctly
-# in the simulation.
-direction_routes = [
+# Define the routes for each node based on their index and the total amount of nodes 
+# so that they are shown correctly in the simulation.
+direction_routes_4 = [
     ("edge_nc", "edge_cs"),  # Node 0: North to Center, Center to South
     ("edge_wc", "edge_ce"),  # Node 1: West to Center, Center to East
     ("edge_sc", "edge_cn"),  # Node 2: South to Center, Center to North
     ("edge_ec", "edge_cw"),  # Node 3: East to Center, Center to West
+]
+
+direction_routes_2 = [
+    ("edge_nc", "edge_cs"),  # Node 0: North to Center, Center to South
+    ("edge_wc", "edge_cs"),  # Node 1: West to Center, Center to South
 ]
 
 # Mapping from detected label to SUMO vType id
@@ -54,18 +58,15 @@ def main():
     sumo.start()
     main.node = MeshNode(args["index"], nodes, sumo=sumo)
     depart_counter = 0
+    last_det = 0
     time.sleep(2)  # Ensure the simulation is ready before starting detection
-
     detector = WeightDetector(args["video"], args["confidence"], args["frequency"])
 
     while True:
+        now = time.time()
+        #if now - last_det >= args["frequency"]:
         detections, frame = detector.detect_vehicles()
-        if detections == [] and frame is None:
-            logger.info("Video processing complete. Exiting.")
-            close(sumo)
-            break
-
-        #display_video_feed_with_bounding_boxes(args, frame)
+    #    last_det = now
         broadcast_sumo_vehicles(detections, args, depart_counter)
         depart_counter = send_vehicles_to_sumo(args, sumo, depart_counter, detections)
 
@@ -74,11 +75,10 @@ def main():
         logger.info(f"[DETECTOR] Node {args['index']} detected weight: {weight}")
         main.node.received_weights[args["index"]] = weight
         main.node.broadcast_weight(weight)
-
         advance_simulation(args, sumo)
 
         total_nodes = args["nodes"]
-        # Defensive check: if a light doesn't start, we assume its weight is -inf
+        # If a light doesn't start, we assume its weight is -inf
         try:
             weights_array = np.array([
                 main.node.received_weights[i] if main.node.received_weights[i] is not None else -float("inf")
@@ -87,6 +87,7 @@ def main():
         except Exception as e:
             logger.exception(f"[ERROR] Could not build weights_array: {e}")
 
+        #closing condition
         if np.all((weights_array == -float("inf")) | (weights_array == 0)):
             empty_cycles += 1
             logger.warning("No valid weights received from any node. Skipping control message.")
@@ -105,16 +106,6 @@ def main():
         send_control_messages(sumo, total_nodes, max_idx)
         sumo.step()
 
-def display_video_feed_with_bounding_boxes(args, frame):
-    """Displays the video feed with bounding boxes for the specified node.
-
-    Args:
-        args (dict): The arguments passed to the simulation.
-        frame (ndarray): The current video frame.
-    """
-    if frame is not None:
-        cv2.imshow(f"Node {args['index']} Detection", frame)
-
 def close(sumo):
     """Closes all open windows and cleans up resources
 
@@ -122,7 +113,7 @@ def close(sumo):
         sumo (SumoController): The SUMO controller instance
     """
     sumo.close()
-    #cv2.destroyAllWindows()
+    cv2.destroyAllWindows()
 
 def arguments_parser():
     """Parses command line arguments for the simulation
@@ -134,7 +125,7 @@ def arguments_parser():
     parser.add_argument("-i", "--index", type=int, required=True, help="Node index (0-3)")
     parser.add_argument("-v", "--video", required=True, help="Path to input video")
     parser.add_argument("-c", "--confidence", type=float, default=0.5, help="Detection confidence, defaults to 50%")
-    parser.add_argument("-f", "--frequency", type=float, default=5, help="Detection frequency in seconds, defaults to 5")
+    parser.add_argument("-f", "--frequency", type=float, default=15, help="Detection frequency in seconds, defaults to 15")
     parser.add_argument("-n", "--nodes", type=int, required=True, help="Amount of nodes in group")
     parser.add_argument("-g", "--gui", action="store_true", help="Flag to use SUMO GUI for visualization")
     args = vars(parser.parse_args())
@@ -167,7 +158,7 @@ def send_control_messages(sumo, total_nodes, max_idx):
     sumo.set_light_state_from_lists(green_nodes, red_nodes, 2)
 
 def send_vehicles_to_sumo(args, sumo, depart_counter, detections):
-    """Sends vehicle information to the SUMO simulation
+    """Sends vehicle information to the SUMO simulation that the node itself runs.
 
     Args:
         args (dict): The arguments passed to the simulation
@@ -183,7 +174,10 @@ def send_vehicles_to_sumo(args, sumo, depart_counter, detections):
         vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
         vehicle_id = f"veh_{args['index']}_{depart_counter}"
         route_id = f"r_{vehicle_id}"
-        edge_from, edge_to = direction_routes[args["index"]]
+        if (args["nodes"] == 4):
+            edge_from, edge_to = direction_routes_4[args["index"]]
+        elif (args["nodes"] == 2):
+            edge_from, edge_to = direction_routes_2[args["index"]]
         sumo.add_vehicle(
                 vehicle_id, route_id, edge_from, edge_to,
                 depart_time=current_sim_step, vtype=vehicle_type
@@ -197,7 +191,10 @@ def broadcast_sumo_vehicles(detections, args, depart_counter):
         vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
         vehicle_id = f"veh_{args['index']}_{depart_counter}"
         route_id = f"r_{vehicle_id}"
-        edge_from, edge_to = direction_routes[args["index"]]
+        if (args["nodes"] == 4):
+            edge_from, edge_to = direction_routes_4[args["index"]]
+        elif (args["nodes"] == 2):
+            edge_from, edge_to = direction_routes_2[args["index"]]
         main.node.broadcast_message(f"Vehicle data from node {args['index']}: "
                                     f"{vehicle_id}, {route_id}, {edge_from}, {edge_to}, "
                                     f"{depart_counter}, {vehicle_type}")
