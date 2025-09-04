@@ -58,15 +58,11 @@ def main():
     sumo.start()
     main.node = MeshNode(args["index"], nodes, sumo=sumo)
     depart_counter = 0
-    last_det = 0
     time.sleep(2)  # Ensure the simulation is ready before starting detection
     detector = WeightDetector(args["video"], args["confidence"], args["frequency"])
 
     while True:
-        now = time.time()
-        #if now - last_det >= args["frequency"]:
         detections, frame = detector.detect_vehicles()
-    #    last_det = now
         broadcast_sumo_vehicles(detections, args, depart_counter)
         depart_counter = send_vehicles_to_sumo(args, sumo, depart_counter, detections)
 
@@ -169,18 +165,12 @@ def send_vehicles_to_sumo(args, sumo, depart_counter, detections):
     Returns:
         int: The updated departure counter
     """
-    current_sim_step = depart_counter
     for vehicle in detections:
-        vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
-        vehicle_id = f"veh_{args['index']}_{depart_counter}"
-        route_id = f"r_{vehicle_id}"
-        if (args["nodes"] == 4):
-            edge_from, edge_to = direction_routes_4[args["index"]]
-        elif (args["nodes"] == 2):
-            edge_from, edge_to = direction_routes_2[args["index"]]
+        vehicle_id, route_id, edge_from, edge_to, vehicle_type = build_vehicle_data(
+                args, vehicle, depart_counter)
         sumo.add_vehicle(
                 vehicle_id, route_id, edge_from, edge_to,
-                depart_time=current_sim_step, vtype=vehicle_type
+                depart_time=depart_counter, vtype=vehicle_type
                 )
         depart_counter += 1
     return depart_counter
@@ -188,17 +178,23 @@ def send_vehicles_to_sumo(args, sumo, depart_counter, detections):
 def broadcast_sumo_vehicles(detections, args, depart_counter):
     """Broadcasts vehicle information to all nodes."""
     for vehicle in detections:
-        vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
-        vehicle_id = f"veh_{args['index']}_{depart_counter}"
-        route_id = f"r_{vehicle_id}"
-        if (args["nodes"] == 4):
-            edge_from, edge_to = direction_routes_4[args["index"]]
-        elif (args["nodes"] == 2):
-            edge_from, edge_to = direction_routes_2[args["index"]]
+        vehicle_id, route_id, edge_from, edge_to, vehicle_type = build_vehicle_data(
+                args, vehicle, depart_counter)
         main.node.broadcast_message(f"Vehicle data from node {args['index']}: "
                                     f"{vehicle_id}, {route_id}, {edge_from}, {edge_to}, "
                                     f"{depart_counter}, {vehicle_type}")
         depart_counter += 1
+
+def build_vehicle_data(args, vehicle, depart_counter):
+    """Constructs vehicle info and SUMO route for a detection."""
+    vehicle_type = label_to_sumo_type.get(vehicle["type"], "car")
+    vehicle_id = f"veh_{args['index']}_{depart_counter}"
+    route_id = f"r_{vehicle_id}"
+    if args["nodes"] == 4:
+        edge_from, edge_to = direction_routes_4[args["index"]]
+    elif args["nodes"] == 2:
+        edge_from, edge_to = direction_routes_2[args["index"]]
+    return vehicle_id, route_id, edge_from, edge_to, vehicle_type
 
 def advance_simulation(args, sumo):
     """Advances the SUMO simulation according to the frequency
