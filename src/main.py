@@ -83,6 +83,13 @@ def main():
         except Exception as e:
             logger.exception(f"[ERROR] Could not build weights_array: {e}")
 
+        max_idx = np.argmax(weights_array)
+        logger.info(f"Weights from all nodes: {weights_array}")
+        logger.info(f"Node with maximum weight: {max_idx} with weight: {weights_array[max_idx]}")
+
+        send_control_messages(sumo, total_nodes, max_idx)
+        sumo.step()
+
         #closing condition
         if np.all((weights_array == -float("inf")) | (weights_array == 0)):
             empty_cycles += 1
@@ -95,12 +102,6 @@ def main():
         else:
             empty_cycles = 0  # Reset if any node is not empty
 
-        max_idx = np.argmax(weights_array)
-        logger.info(f"Weights from all nodes: {weights_array}")
-        logger.info(f"Node with maximum weight: {max_idx} with weight: {weights_array[max_idx]}")
-
-        send_control_messages(sumo, total_nodes, max_idx)
-        sumo.step()
 
 def close(sumo):
     """Closes all open windows and cleans up resources
