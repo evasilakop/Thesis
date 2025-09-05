@@ -5,31 +5,7 @@ An adaptive traffic management system using computer vision and distributed deci
 
 ## 🏗️ System Architecture
 
-```mermaid
-graph TB
-    subgraph DL ["🔍 Detection Layer"]
-        A[Video Input] --> B[Computer Vision]
-        B --> C[Vehicle Classification]
-        C --> D["• Cars<br/>• Buses<br/>• Trucks<br/>• Motorcycles"]
-    end
-    
-    subgraph DecL ["🧠 Decision Layer"] 
-        E[Weight Calculation] --> F[Network Communication]
-        F --> G[Priority Index]
-    end
-    
-    subgraph CL ["⚡ Control Layer"]
-        H[Control Messages] --> I[SUMO Controller]
-        I --> J[Traffic Light Management]
-    end
-    
-    D --> E
-    G --> H
-    
-    style DL fill:#e1f5fe
-    style DecL fill:#f3e5f5
-    style CL fill:#e8f5e8
-```
+![System Architecture](./images/architecture.png)
 
 ## 🛠️ System Requirements
 
