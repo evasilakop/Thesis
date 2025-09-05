@@ -107,3 +107,11 @@ class WeightDetector:
                             "conf": conf
                         })
         return x1,y1,x2,y2
+    
+    def get_fps(self):
+        """Returns the video frame rate"""
+        return self.fps
+    
+    def get_current_video_time(self):
+        """Returns current video time in seconds"""
+        return self.frame_count / self.fps
