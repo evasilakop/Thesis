@@ -66,6 +66,12 @@ def main():
         broadcast_sumo_vehicles(detections, args, depart_counter)
         depart_counter = send_vehicles_to_sumo(args, sumo, depart_counter, detections)
 
+        cv2.imshow(f"Node {args['index']}", frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            detector.cap.release()
+            cv2.destroyAllWindows()
+            print("Video stream ended by user")
+            close(sumo)
         # Weight aggregation and networking
         weight = sum(d["weight"] for d in detections)
         logger.info(f"[DETECTOR] Node {args['index']} detected weight: {weight}")
