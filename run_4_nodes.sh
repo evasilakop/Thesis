@@ -1,27 +1,21 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Set your environment and file paths
-ENV_NAME=your_env_name
-NUM_NODES=4
-VIDEO0=video0.mp4
-VIDEO1=video1.mp4
-VIDEO02=video2.mp4
-VIDEO03=video3.mp4
-MODEL=yolov8n.pt
+# Adjust to point directly to your env’s Python
+PYTHON="$HOME/.conda/envs/thesis/bin/python"
+WORKDIR="/path/to/your/project"    # set this to the root of your repo
 
-# Activate conda base first if needed
-source ~/anaconda3/etc/profile.d/conda.sh
+# Move into the src directory
+cd "$WORKDIR/src" || {
+  echo "ERROR: Cannot cd into $WORKDIR/src"
+  exit 1
+}
 
-# Launch Node 0
-gnome-terminal -- bash -c "conda activate $ENV_NAME && python main.py -i 0 -v $VIDEO0 -n $NUM_NODES -m $MODEL; exec bash"
+# Four parallel jobs, first one with -g
+"$PYTHON" -m main -i 0 -v "../videos/video0.mp4" -n 4 -g &
+"$PYTHON" -m main -i 1 -v "../videos/video1.mp4" -n 4 &
+"$PYTHON" -m main -i 2 -v "../videos/video2.mp4" -n 4 &
+"$PYTHON" -m main -i 3 -v "../videos/video3.mp4" -n 4 &
 
-# Launch Node 1
-gnome-terminal -- bash -c "conda activate $ENV_NAME && python main.py -i 1 -v $VIDEO1 -n $NUM_NODES -m $MODEL; exec bash"
-
-# Launch Node 2
-gnome-terminal -- bash -c "conda activate $ENV_NAME && python main.py -i 2 -v $VIDEO02 -n $NUM_NODES -m $MODEL; exec bash"
-
-# Launch Node 3
-gnome-terminal -- bash -c "conda activate $ENV_NAME && python main.py -i 3 -v $VIDEO03 -n $NUM_NODES -m $MODEL; exec bash"
-
-echo "All nodes launched!"
+# Wait for all background jobs to finish
+wait
+echo "All processing done."

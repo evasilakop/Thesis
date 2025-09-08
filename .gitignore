@@ -1,4 +1,3 @@
-.vscode/launch.json
 src/logs/*
 src/__pycache__/*
 src/simulation/__pycache__/*
