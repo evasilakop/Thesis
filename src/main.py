@@ -242,3 +242,93 @@ if __name__ == "__main__":
     except Exception as e:
         logger.exception(f"Exception occurred: {e}")
         traceback.print_exc()
+
+        # Modified main.py sections
+
+from realistic_detector import RealisticDetectionSimulator
+from yolo_profiler import YOLOPerformanceProfiler
+
+def main():
+    args = arguments_parser()
+    
+    # Initialize SUMO
+    sumo = SumoController("simulation/config.sumocfg", use_gui=args["gui"])
+    sumo.start()
+    main.node = MeshNode(args["index"], nodes, sumo=sumo)
+    
+    # Initialize realistic detection simulator
+    if args.get("use_realistic_simulation", False):
+        yolo_profile_file = args.get("yolo_profile", "yolo_performance_profile.json")
+        detection_simulator = RealisticDetectionSimulator(yolo_profile_file)
+        print(f"Using realistic YOLOv8 simulation with profile: {yolo_profile_file}")
+    
+    # Initialize metrics
+    metrics_collector = MetricsCollector(args["index"])
+    
+    step_counter = 0
+    depart_counter = 0
+    
+    while True:
+        step_counter += 1
+        
+        if args.get("use_realistic_simulation", False):
+            # Use realistic detection simulation
+            detections, ground_truth = sumo.get_realistic_detections(
+                args["index"], detection_simulator
+            )
+            
+            # Log detection performance
+            summary = detection_simulator.get_detection_summary(
+                len(ground_truth), len(detections)
+            )
+            logger.info(f"[REALISTIC DETECTION] Node {args['index']}: "
+                       f"Ground truth: {summary['ground_truth_vehicles']}, "
+                       f"Detected: {summary['detected_vehicles']}, "
+                       f"Rate: {summary['detection_rate']:.2%}")
+            
+        else:
+            # Use original YOLO detector
+            detector = WeightDetector(args["video"], args["confidence"], args["frequency"])
+            detections, frame = detector.detect_vehicles()
+            ground_truth = sumo.get_vehicles_in_detection_zone(args["index"])
+            
+            if frame is not None:
+                cv2.imshow('Detection Frame', frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+        
+        # Rest of your existing logic...
+        weight = sum(d["weight"] for d in detections)
+        main.node.received_weights[args["index"]] = weight
+        main.node.broadcast_weight(weight)
+        
+        # Traffic light control
+        total_nodes = args["nodes"]
+        weights_array = np.array([
+            main.node.received_weights[i] if main.node.received_weights[i] is not None else -float("inf")
+            for i in range(total_nodes)
+        ])
+        
+        max_idx = np.argmax(weights_array)
+        send_control_messages(sumo, total_nodes, max_idx)
+        
+        # Collect metrics
+        metrics_collector.compare_detections(detections, ground_truth, step_counter)
+        metrics_collector.record_traffic_flow(sumo, step_counter)
+        
+        sumo.step()
+        
+        # ... existing termination logic ...
+
+# Update argument parser
+def arguments_parser():
+    parser = argparse.ArgumentParser()
+    # ... existing arguments ...
+    parser.add_argument("--use-realistic-simulation", action="store_true",
+                       help="Use realistic YOLOv8 detection simulation instead of real video")
+    parser.add_argument("--yolo-profile", default="yolo_performance_profile.json",
+                       help="Path to YOLOv8 performance profile file")
+    parser.add_argument("--profile-yolo", action="store_true",
+                       help="Profile YOLOv8 performance on video and save results")
+    args = vars(parser.parse_args())
+    return args

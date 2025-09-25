@@ -62,11 +62,6 @@ class SumoController:
     def add_vehicle(self, veh_id, route_id, edge_from, edge_to, depart_time=0, vtype="car"):
         """
         Dynamically adds a vehicle to the simulation.
-        veh_id: unique vehicle ID
-        route_id: ID for the route
-        edge_from/to: edges (as strings) where vehicle starts and exits
-        depart_time: when vehicle appears in the simulation
-        vtype: SUMO vehicle type id (e.g., 'car', 'bus', 'truck', 'motorcycle')
         """
         if self.started:
             if edge_from not in self.edge_list or edge_to not in self.edge_list:
@@ -83,3 +78,15 @@ class SumoController:
                 raise ValueError(f"[SUMO ERROR] Could not add vehicle {veh_id}: {e}")
         else:
             print(f"[SUMO WARNING] Cannot add vehicle {veh_id}, SUMO not started.")
+    
+    def get_realistic_detections(self, node_index: int, detection_simulator, detection_radius=50):
+        """
+        Get vehicles from SUMO and apply realistic YOLOv8 detection simulation
+        """
+        # Get all vehicles in detection zone (ground truth)
+        ground_truth_vehicles = self.get_vehicles_in_detection_zone(node_index, detection_radius)
+        
+        # Apply realistic detection simulation
+        realistic_detections = detection_simulator.simulate_detections(ground_truth_vehicles)
+        
+        return realistic_detections, ground_truth_vehicles
