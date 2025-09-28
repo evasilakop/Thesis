@@ -78,19 +78,3 @@ class SumoController:
                 raise ValueError(f"[SUMO ERROR] Could not add vehicle {veh_id}: {e}")
         else:
             print(f"[SUMO WARNING] Cannot add vehicle {veh_id}, SUMO not started.")
-    
-    def get_realistic_detections_for_node(self, detection_simulator):
-        """Use your existing logic to get vehicles for a specific node"""
-        all_vehicles = []
-        for veh_id in traci.vehicle.getIDList():
-            veh_type = traci.vehicle.getTypeID(veh_id)
-            vehicle_data = {
-                "type": veh_type,
-                "weight": self._get_weight_for_vehicle_type(veh_type),
-                "sumo_id": veh_id
-            }
-            all_vehicles.append(vehicle_data)
-        
-        # Apply your existing node filtering logic here if needed
-        # Or just simulate detection on all vehicles (like your current system does)
-        return detection_simulator.simulate_detections(all_vehicles)

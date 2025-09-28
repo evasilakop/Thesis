@@ -1,9 +1,8 @@
-# realistic_detector.py (no typing imports)
 import random
 import json
 import numpy as np
 import os
-from collections import defaultdict
+
 
 class RealisticDetectionSimulator:
     def __init__(self, profile_file=None):
@@ -12,6 +11,7 @@ class RealisticDetectionSimulator:
             with open(profile_file, 'r') as f:
                 self.profile = json.load(f)
             self.detection_rates = self.profile.get("detection_rates", {})
+            self.confidence = self.profile.get("avg_confidences", {})
         else:
             # Use research-based default rates
             self.detection_rates = {
@@ -37,19 +37,19 @@ class RealisticDetectionSimulator:
             # Get detection rate for this vehicle type
             detection_rate = self.detection_rates.get(vehicle_type, 0.5)
             
-            # Simulate detection decision
+            # Simulate detection decision according to the profile
             if random.random() < detection_rate:
                 # Generate realistic confidence score
-                confidence = self._generate_confidence(vehicle_type)
-                
+                if self.confidence:
+                    confidence = self._generate_confidence(vehicle_type)
                 if confidence >= self.confidence_threshold:
-                    # Create a new defaultdict for the detected vehicle
-                    detected_vehicle = defaultdict(lambda: None)
+                    # Create a new dictionary for the detected vehicle
+                    detected_vehicle = {}
                     detected_vehicle.update(vehicle)  # Copy all existing data
                     detected_vehicle["conf"] = confidence
                     detected_vehicle["detection_source"] = "realistic_simulation"
                     realistic_detections.append(detected_vehicle)
-        
+            
         return realistic_detections
     
     def _generate_confidence(self, vehicle_type):
