@@ -1,0 +1,23 @@
+{
+  "model": "yolov8n",
+  "confidence_threshold": 0.5,
+  "total_frames_processed": 8265,
+  "detection_rates": {
+    "car": 0.8648177945083456,
+    "bus": 0.7803686428395925,
+    "truck": 0.7604255979731336,
+    "motorcycle": 0.7295685884012169
+  },
+  "total_detections": {
+    "car": 47962,
+    "truck": 3255,
+    "motorcycle": 753,
+    "bus": 2195
+  },
+  "avg_confidences": {
+    "car": 0.7206814954236214,
+    "truck": 0.6336879983109447,
+    "motorcycle": 0.6079738236676807,
+    "bus": 0.6503072023663271
+  }
+}

@@ -62,11 +62,6 @@ class SumoController:
     def add_vehicle(self, veh_id, route_id, edge_from, edge_to, depart_time=0, vtype="car"):
         """
         Dynamically adds a vehicle to the simulation.
-        veh_id: unique vehicle ID
-        route_id: ID for the route
-        edge_from/to: edges (as strings) where vehicle starts and exits
-        depart_time: when vehicle appears in the simulation
-        vtype: SUMO vehicle type id (e.g., 'car', 'bus', 'truck', 'motorcycle')
         """
         if self.started:
             if edge_from not in self.edge_list or edge_to not in self.edge_list:

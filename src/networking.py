@@ -19,7 +19,7 @@ class MeshNode:
         time.sleep(2)
 
     def server_listen(self):
-        """Starts the server to listen for incoming weight data."""
+        """Starts the server to listen for incoming data."""
         try:
             self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._server_socket.settimeout(3.0)
@@ -71,9 +71,13 @@ class MeshNode:
                         depart_counter = int(vehicle_fields[4])
                         vehicle_type = vehicle_fields[5]
                         if self.sumo is not None:
-                            self.sumo.add_vehicle(vehicle_id, route_id, edge_from, edge_to, depart_time=depart_counter, vtype=vehicle_type)
+                            self.sumo.add_vehicle(vehicle_id, route_id,
+                                                  edge_from, edge_to, 
+                                                  depart_time=depart_counter, 
+                                                  vtype=vehicle_type)
                         else:
-                            print(f"[SERVER WARNING] SumoController not set for Node {self.node_index}, cannot add vehicle.")
+                            print(f"[SERVER WARNING] SumoController not set for Node {self.node_index},"
+                                  f" cannot add vehicle.")
                     except Exception as e:
                         print(f"[SERVER ERROR] Node {self.node_index} failed to parse vehicle data: {e}")
                 else: 

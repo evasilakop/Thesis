@@ -1,0 +1,58 @@
+Mean waiting time with plotXMLAttributes:
+
+python plotXMLAttributes.py C:\Users\User\Documents\GitHub\Thesis\src\evaluation\2025-09-25-13-02-54\my_tls_5x_complete_no-noise\mine_5x_summary.xml C:\Users\User\Documents\GitHub\Thesis\src\evaluation\2025-09-25-13-02-54\my_tls_5x_complete_no-noise\std_5x_summary.xml -x time -y meanWaitingTime -i @NONE --legend --xlabel "Simulation Time [simulation steps]" --ylabel "Mean Waiting Time [s]" --output C:\Users\User\Documents\GitHub\Thesis\src\evaluation\2025-09-25-13-02-54\mean_waiting_time_comparison.png
+
+
+Mean amount of stopped vehicles in network every 60", remove -b to get every step
+
+python plot_stopped_bar.py -i mine_5x_summary.xml std_5x_summary.xml -l Proposed Standard -b 60 -o graph\stopped_mean_60s.png
+
+
+Barplot CO2 emissions in network per step:
+
+python "%SUMO_HOME%\tools\visualization\plotXMLAttributes.py" std_5x_edgeEmissions.xml -x time -y CO2 --barplot --xlabel "Time [s]" --ylabel "CO₂ [mg]" --title "CO₂ Emissions per Timestep" -o edge_CO2_bar.png
+
+
+Barplot CO2 emissions in network every 60", remove 0b to get every step
+
+python plot_edge_emissions_bar.py -i mine_5x_edgeEmissions.xml std_5x_edgeEmissions.xml -l Proposed Standard -b 60 -o co2_bar_60s.png
+
+
+Scatter plot co2 emissions in network every 60", remove -b to get every step
+
+python plot_scatter_co2_w_curve.py -i mine_5x_edgeEmissions.xml std_5x_edgeEmissions.xml -l Proposed Standard -b 60 -o co2_scatter_comparison_smoothed.png
+
+
+NOx PMx emissions per step, 2 figures:
+
+python plot_nox_pmx_scatter.py -i mine_5x_edgeEmissions.xml std_5x_edgeEmissions.xml -l Proposed Standard -m NOx PMx -b 60 -o no_pm_comparison.png
+
+
+Scatter plot of stopped cars
+
+python $SUMO_HOME/tools/visualization/plotXMLAttributes.py mine_5x_fcdData.xml -x time -y @COUNT -i @NONE  --scatterplot --xlabel "Simulation time [s]" --ylabel "Number of stopped vehicles" --title "Stopped vehicles per Timestep" -o graph\stopped_vehicles_scatter.png
+
+
+Stopped vehicles csv
+
+python compare_stopped.py -i mine_5x_fcdData.xml std_5x_fcdData.xml -l Proposed Standard
+
+
+Vehicles in network every 60", remove -b to get every step
+
+python plot_veh_in_network.py -i mine_5x_summary.xml std_5x_summary.xml -l Proposed Standard -b 60 -o running_compare_60s.png
+
+
+Fuel consumption comparison every 60"
+
+python compare_fuel_bar.py -i mine_5x_edgeEmissions.xml std_5x_edgeEmissions.xml -l Proposed Standard -b 60 -o fuel_60s_comparison_barplot.png
+
+
+Latex table w existing, stopped and fuel
+
+python make_alternating_vehicles_fuel_table.py -i mine_5x_summary.xml std_5x_summary.xml -e mine_5x_edgeEmissions.xml std_5x_edgeEmissions.xml -l Proposed Standard -b 60 -o table_60s.tex
+
+
+Latex table w emissions
+
+python make_alternating_emissions_table.py -i mine_5x_edgeEmissions.xml std_5x_edgeEmissions.xml -l Proposed Standard  -b 60 -o emissions_60s.tex

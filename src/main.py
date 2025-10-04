@@ -60,8 +60,15 @@ def main():
     depart_counter = 0
     time.sleep(2)  # Ensure the simulation is ready before starting detection
     detector = WeightDetector(args["video"], args["confidence"], args["frequency"])
-
+    
+    # Get video properties for synchronization
+    video_fps = detector.get_fps()  # You'll need to add this method
+    frame_duration = 1.0 / video_fps  # Duration of each frame in seconds
+    last_frame_time = time.time()
+    
     while True:
+        current_time = time.time()
+        
         detections, frame = detector.detect_vehicles()
         broadcast_sumo_vehicles(detections, args, depart_counter)
         depart_counter = send_vehicles_to_sumo(args, sumo, depart_counter, detections)
@@ -77,8 +84,10 @@ def main():
         logger.info(f"[DETECTOR] Node {args['index']} detected weight: {weight}")
         main.node.received_weights[args["index"]] = weight
         main.node.broadcast_weight(weight)
-        advance_simulation(args, sumo)
-
+        
+        # Sync simulation with video timing
+        advance_simulation_synced(args, sumo, current_time, last_frame_time, frame_duration)
+        last_frame_time = current_time
         total_nodes = args["nodes"]
         # If a light doesn't start, we assume its weight is -inf
         try:
@@ -209,10 +218,26 @@ def advance_simulation(args, sumo):
     Args:
         args (dict): The arguments passed to the simulation
         sumo (SumoController): The SUMO controller instance
+        current_time (float): Current timestamp
+        last_frame_time (float): Timestamp of last frame
+        frame_duration (float): Duration of each video frame in seconds
     """
-    for _ in range(int(args["frequency"])*5):
-        time.sleep(0.2)
+    # Calculate elapsed time since last frame
+    elapsed_time = current_time - last_frame_time
+    
+    # Calculate how many simulation steps should occur
+    # Assuming SUMO step time is 1 second (adjust based on your SUMO config)
+    sumo_step_time = 1.0  # seconds per SUMO step
+    steps_needed = int(elapsed_time / sumo_step_time)
+    
+    # Advance simulation by calculated steps
+    for _ in range(max(1, steps_needed)):  # At least 1 step
         sumo.step()
+    
+    # Sleep to maintain real-time sync if processing is faster than video
+    remaining_time = frame_duration - elapsed_time
+    if remaining_time > 0:
+        time.sleep(remaining_time)
 
 if __name__ == "__main__":
     try:
