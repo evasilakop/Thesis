@@ -1,13 +1,6 @@
 @echo off
-REM Set your working directory and environment name
-SET WORKDIR=C:\Users\eleni\Documents\GitHub\Thesis
-SET NUM_NODES=4
-SET ENV=xbtest
+REM Adjust to point directly to your env’s Python
+SET PYTHON=C:\Users\User\.conda\envs\thesis\python.exe
 
-REM Node 0
-start "" /D "%WORKDIR%" cmd.exe /K "CALL C:\Users\eleni\anaconda3\Scripts\activate.bat %ENV% && python main.py -i 0 -v video0.mp4 -n %NUM_NODES%"
-
-REM Node 1
-start "" /D "%WORKDIR%" cmd.exe /K "CALL C:\Users\eleni\anaconda3\Scripts\activate.bat %ENV% && python main.py -i 1 -v video1.mp4 -n %NUM_NODES%"
-
-echo All nodes launched!
+start "" /D "%WORKDIR%src" %PYTHON% -m main -i 0 -v ..\videos\video0.mp4 -n 4 -g
+start "" /D "%WORKDIR%src" %PYTHON% -m main -i 1 -v ..\videos\video1.mp4 -n 4
