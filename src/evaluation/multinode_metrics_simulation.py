@@ -6,7 +6,7 @@ import traci
 
 class RealisticDetectionSimulator:
     def __init__(self, profile_file=None):
-        """Initialize with research-based detection rates"""
+        """Initialize with modeled rates from json or research-based detection rates"""
         if profile_file and os.path.exists(profile_file):
             with open(profile_file, 'r') as f:
                 self.profile = json.load(f)
@@ -38,7 +38,7 @@ class RealisticDetectionSimulator:
                     confidence = self.confidence.get(vehicle_type, 0.7)
 
                 if confidence >= self.confidence_threshold:
-                    detected_vehicle = dict(vehicle)  # copy
+                    detected_vehicle = dict(vehicle)
                     detected_vehicle["conf"] = confidence
                     detected_vehicle["detection_source"] = "realistic_simulation"
                     realistic_detections.append(detected_vehicle)
@@ -124,7 +124,8 @@ class SumoController:
             "--no-warnings",
             "--start",
             "--output-prefix", "TIME",
-            "--scale", "5.0"
+            "--scale", "5.0",
+            "--device.emissions.probability", "1.0"
         ]
         print("Launching SUMO with:", self.sumo_cmd)
         self.started = False

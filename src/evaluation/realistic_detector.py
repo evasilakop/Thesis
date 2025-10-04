@@ -27,7 +27,6 @@ class RealisticDetectionSimulator:
     def simulate_detections(self, sumo_vehicles):
         """
         Apply realistic detection rates to SUMO vehicles
-        No typing - just regular Python
         """
         realistic_detections = []
         
@@ -43,9 +42,8 @@ class RealisticDetectionSimulator:
                 if self.confidence:
                     confidence = self._generate_confidence(vehicle_type)
                 if confidence >= self.confidence_threshold:
-                    # Create a new dictionary for the detected vehicle
                     detected_vehicle = {}
-                    detected_vehicle.update(vehicle)  # Copy all existing data
+                    detected_vehicle.update(vehicle)
                     detected_vehicle["conf"] = confidence
                     detected_vehicle["detection_source"] = "realistic_simulation"
                     realistic_detections.append(detected_vehicle)
@@ -63,8 +61,6 @@ class RealisticDetectionSimulator:
         }
         
         base = base_confidence.get(vehicle_type, 0.7)
-        # Add some realistic variance
         confidence = np.random.normal(base, 0.12)
         
-        # Keep in realistic range
         return max(0.1, min(0.99, confidence))
