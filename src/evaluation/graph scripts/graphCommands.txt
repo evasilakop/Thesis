@@ -1,7 +1,8 @@
 Mean waiting time with plotXMLAttributes:
 
-python plotXMLAttributes.py C:\Users\User\Documents\GitHub\Thesis\src\evaluation\2025-09-25-13-02-54\my_tls_5x_complete_no-noise\mine_5x_summary.xml C:\Users\User\Documents\GitHub\Thesis\src\evaluation\2025-09-25-13-02-54\my_tls_5x_complete_no-noise\std_5x_summary.xml -x time -y meanWaitingTime -i @NONE --legend --xlabel "Simulation Time [simulation steps]" --ylabel "Mean Waiting Time [s]" --output C:\Users\User\Documents\GitHub\Thesis\src\evaluation\2025-09-25-13-02-54\mean_waiting_time_comparison.png
+python plotXMLAttributes.py C:\Users\User\Documents\GitHub\Thesis\src\evaluation\2025-09-25-13-02-54\my_tls_5x_complete_no-noise\mine_5x_summary.xml C:\Users\User\Documents\GitHub\Thesis\src\evaluation\2025-09-25-13-02-54\stadard_tls_5x_complete_no-noise\std_5x_summary.xml -x time -y meanWaitingTime -i @NONE -l "Χρονοπρογραμματισμένοι σηματοδότες,Προτεινόμενο σύστημα" --legend --xlabel "Χρόνος (s)" --ylabel "Μέσος χρόνος αναμονής (s)" --output C:\Users\User\Desktop\waiting_time.png 
 
+python plotXMLAttributes.py mine_5x_summary.xml std_5x_summary.xml -x time -y meanWaitingTime --print-script > waiting_time.py
 
 Mean amount of stopped vehicles in network every 60", remove -b to get every step
 
